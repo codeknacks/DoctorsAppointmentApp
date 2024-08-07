@@ -1,4 +1,3 @@
-import 'package:doctor_appointment_app/doctors_management/screens/doctor_profile.dart';
 import 'package:doctor_appointment_app/doctors_management/screens/doctor_signup_screen.dart';
 import 'package:doctor_appointment_app/doctors_management/screens/doctors_availability.dart';
 import 'package:flutter/material.dart';
