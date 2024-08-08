@@ -82,7 +82,19 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          title: Text('Doctor Home'),
+          title: Text(
+            'Doctor Home',
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ),
+          flexibleSpace: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.blue, Colors.cyan],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+          ),
           actions: [
             IconButton(
               icon: Icon(Icons.notifications),
@@ -115,39 +127,52 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                             itemBuilder: (context, index) {
                               var appointment = upcomingAppointments[index];
                               return Card(
-                                elevation: 4,
+                                elevation: 8,
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
+                                  borderRadius: BorderRadius.circular(15),
                                 ),
                                 margin: EdgeInsets.only(bottom: 16),
-                                child: Padding(
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [Colors.white, Colors.blue[50]!],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ),
+                                  ),
                                   padding: const EdgeInsets.all(16.0),
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Text(
-                                        'Patient: ${appointment['name']}',
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.w600,
-                                        ),
+                                      Row(
+                                        children: [
+                                          Icon(Icons.person,
+                                              color: Colors.blue),
+                                          SizedBox(width: 8),
+                                          Text(
+                                            'Patient: ${appointment['name']}',
+                                            style: TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                       SizedBox(height: 8),
-                                      Text(
-                                        'Age: ${appointment['age']}',
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          color: Colors.grey[600],
-                                        ),
-                                      ),
-                                      SizedBox(height: 8),
-                                      Text(
-                                        'Appointment Date: ${appointment['appointmentDate']}',
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          color: Colors.grey[600],
-                                        ),
+                                      Row(
+                                        children: [
+                                          Icon(Icons.calendar_today,
+                                              color: Colors.blue),
+                                          SizedBox(width: 8),
+                                          Text(
+                                            'Appointment Date: ${appointment['appointmentDate']}',
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              color: Colors.grey[600],
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ],
                                   ),
@@ -185,7 +210,24 @@ class NotificationScreen extends StatelessWidget {
     User? user = _auth.currentUser;
 
     return Scaffold(
-      appBar: AppBar(title: Text('Notifications')),
+      appBar: AppBar(
+        title: Row(
+          children: [
+            Icon(Icons.notifications),
+            SizedBox(width: 8),
+            Text('Notifications'),
+          ],
+        ),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.blue, Colors.cyan],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+      ),
       body: StreamBuilder<QuerySnapshot>(
         stream: _firestore
             .collection('appointments')
@@ -205,23 +247,46 @@ class NotificationScreen extends StatelessWidget {
               var appointment = notifications[index];
               var appointmentData = appointment.data() as Map<String, dynamic>;
 
-              return ListTile(
-                title: Text('Patient: ${appointmentData['patientName']}'),
-                subtitle: Text(
-                    'Requested Time: ${appointmentData['appointmentTime']}'),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: Icon(Icons.check, color: Colors.green),
-                      onPressed: () => _handleAppointment(appointment.id, true),
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.close, color: Colors.red),
-                      onPressed: () =>
-                          _handleAppointment(appointment.id, false),
-                    ),
-                  ],
+              return Card(
+                elevation: 8,
+                margin: EdgeInsets.all(10),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: ListTile(
+                  leading: CircleAvatar(
+                    child: Icon(Icons.person, color: Colors.white),
+                    backgroundColor: Colors.blueAccent,
+                  ),
+                  title: Text('Patient: ${appointmentData['patientName']}'),
+                  subtitle: Text(
+                      'Requested Time: ${appointmentData['appointmentTime']}'),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: () =>
+                            _handleAppointment(appointment.id, true),
+                        icon: Icon(Icons.check),
+                        label: Text("Accept"),
+                        style: ElevatedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          backgroundColor: Colors.green,
+                        ),
+                      ),
+                      SizedBox(width: 8),
+                      ElevatedButton.icon(
+                        onPressed: () =>
+                            _handleAppointment(appointment.id, false),
+                        icon: Icon(Icons.close),
+                        label: Text("Reject"),
+                        style: ElevatedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          backgroundColor: Colors.red,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               );
             },

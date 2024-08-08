@@ -20,6 +20,7 @@ class DoctorProfileScreen extends StatefulWidget {
 class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
   int _selectedIndex = 1;
   late String doctorId;
+
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -135,7 +136,6 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
           _profilePicUrl = downloadUrl;
         });
       } catch (e) {
-        // Handle any errors
         print('Failed to upload profile picture: $e');
       }
     }
@@ -181,7 +181,19 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Doctor Profile Management')),
+      appBar: AppBar(
+        title: Text('Doctor Profile Management'),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.blue, Colors.cyan],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+        // backgroundColor: Colors.blueGrey[900],
+      ),
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
           : Padding(
@@ -197,38 +209,85 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
                         backgroundImage: _profilePicUrl != null
                             ? NetworkImage(_profilePicUrl!)
                             : null,
+                        backgroundColor: Colors.grey[300],
                         child: _profilePicUrl == null
-                            ? Icon(Icons.add_a_photo)
+                            ? Icon(Icons.add_a_photo, color: Colors.white)
                             : null,
                       ),
                     ),
+                    SizedBox(height: 16),
                     TextFormField(
                       controller: _nameController,
-                      decoration: InputDecoration(labelText: 'Name'),
+                      decoration: InputDecoration(
+                        labelText: 'Name',
+                        labelStyle: TextStyle(color: Colors.blueGrey[800]),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.blueGrey[800]!),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.blueAccent),
+                        ),
+                      ),
                       validator: (value) =>
                           value!.isEmpty ? 'Please enter name' : null,
                     ),
+                    SizedBox(height: 16),
                     TextFormField(
                       controller: _specializationController,
-                      decoration: InputDecoration(labelText: 'Specialization'),
+                      decoration: InputDecoration(
+                        labelText: 'Specialization',
+                        labelStyle: TextStyle(color: Colors.blueGrey[800]),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.blueGrey[800]!),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.blueAccent),
+                        ),
+                      ),
                       validator: (value) =>
                           value!.isEmpty ? 'Please enter specialization' : null,
                     ),
+                    SizedBox(height: 16),
                     TextFormField(
                       controller: _clinicAddressController,
-                      decoration: InputDecoration(labelText: 'Clinic Address'),
+                      decoration: InputDecoration(
+                        labelText: 'Clinic Address',
+                        labelStyle: TextStyle(color: Colors.blueGrey[800]),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.blueGrey[800]!),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.blueAccent),
+                        ),
+                      ),
                       validator: (value) =>
                           value!.isEmpty ? 'Please enter clinic address' : null,
                     ),
+                    SizedBox(height: 16),
                     TextFormField(
                       controller: _ratePerHourController,
-                      decoration: InputDecoration(labelText: 'Rate Per Hour'),
+                      decoration: InputDecoration(
+                        labelText: 'Rate Per Hour',
+                        labelStyle: TextStyle(color: Colors.blueGrey[800]),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.blueGrey[800]!),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.blueAccent),
+                        ),
+                      ),
                       keyboardType: TextInputType.number,
                       validator: (value) =>
                           value!.isEmpty ? 'Please enter rate per hour' : null,
                     ),
                     SizedBox(height: 16),
-                    Text('Unavailable Days:'),
+                    Text(
+                      'Unavailable Days:',
+                      style: TextStyle(
+                          color: Colors.blueGrey[800],
+                          fontWeight: FontWeight.bold),
+                    ),
+                    SizedBox(height: 8),
                     DropdownButtonFormField<String>(
                       value: _unavailableDays.isEmpty
                           ? null
@@ -250,21 +309,47 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
                           }
                         });
                       },
-                      hint: Text('Select unavailable days'),
-                      isExpanded: true,
                       decoration: InputDecoration(
-                        border: OutlineInputBorder(),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.blueGrey[800]!),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.blueAccent),
+                        ),
                       ),
+                      validator: (value) => value == null
+                          ? 'Please select unavailable days'
+                          : null,
                     ),
-                    SizedBox(height: 16),
-                    _isLoading
-                        ? Center(child: CircularProgressIndicator())
-                        : ElevatedButton(
-                            onPressed: _saveProfile,
-                            child: Text(_isProfileExists
-                                ? 'Update Profile'
-                                : 'Save Profile'),
-                          ),
+                    SizedBox(height: 32),
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Colors.blue, Colors.cyan],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                      child: ElevatedButton(
+                        onPressed: _saveProfile,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors
+                              .transparent, // Make the button's background color transparent
+                          elevation:
+                              0, // Remove the button's shadow to show the gradient properly
+                        ),
+                        child: Text('Save Profile'),
+                      ),
+                    )
+
+                    // ElevatedButton(
+                    //   onPressed: _saveProfile,
+                    //   style: ElevatedButton.styleFrom(
+                    //     backgroundColor: Colors.blueGrey[800],
+                    //   ),
+                    //   child: Text('Save Profile'),
+                    // ),
                   ],
                 ),
               ),

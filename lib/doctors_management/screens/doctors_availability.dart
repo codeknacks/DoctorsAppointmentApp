@@ -128,7 +128,16 @@ class _DoctorAvailabilityScreenState extends State<DoctorAvailabilityScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Doctor Availability Management'),
-        backgroundColor: Colors.teal,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.blue, Colors.cyan],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+        // backgroundColor: Colors.blueGrey[900],
       ),
       body: isLoading
           ? Center(child: CircularProgressIndicator())
@@ -140,22 +149,22 @@ class _DoctorAvailabilityScreenState extends State<DoctorAvailabilityScreen> {
                     controller: _slotController,
                     decoration: InputDecoration(
                       labelText: 'Enter available slot (e.g., 9 PM - 10 PM)',
-                      labelStyle: TextStyle(color: Colors.teal),
+                      labelStyle: TextStyle(color: Colors.blueGrey[800]),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8.0),
                         borderSide: BorderSide(
-                          color: Colors.teal,
+                          color: Colors.blueGrey[800]!,
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8.0),
                         borderSide: BorderSide(
-                          color: Colors.teal,
+                          color: Colors.blueAccent,
                           width: 2.0,
                         ),
                       ),
                       suffixIcon: IconButton(
-                        icon: Icon(Icons.add, color: Colors.teal),
+                        icon: Icon(Icons.add, color: Colors.blueGrey[800]),
                         onPressed: _addSlot,
                       ),
                     ),
@@ -185,30 +194,40 @@ class _DoctorAvailabilityScreenState extends State<DoctorAvailabilityScreen> {
                               icon: Icon(Icons.delete, color: Colors.redAccent),
                               onPressed: () => _removeSlot(index),
                             ),
-                            tileColor: Colors.teal[50],
+                            tileColor: Colors.blueGrey[50],
                           ),
                         );
                       },
                     ),
                   ),
-                  ElevatedButton(
-                    onPressed: _saveSlots,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.teal,
-                      padding: EdgeInsets.symmetric(
-                          horizontal: 32.0, vertical: 12.0),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8.0),
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Colors.blue, Colors.cyan],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                    child: ElevatedButton(
+                      onPressed: _saveSlots,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors
+                            .transparent, // Make the button's background color transparent
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 32.0, vertical: 12.0),
+                        elevation:
+                            0, // Remove the button's shadow to show the gradient properly
+                      ),
+                      child: Text(
+                        'Save Slots',
+                        style: TextStyle(
+                          fontSize: 16.0,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
-                    child: Text(
-                      'Save Slots',
-                      style: TextStyle(
-                        fontSize: 16.0,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
+                  )
                 ],
               ),
             ),
