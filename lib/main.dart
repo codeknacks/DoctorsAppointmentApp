@@ -1,5 +1,6 @@
 import 'package:doctor_appointment_app/doctors_management/provider/userprovider.dart';
 import 'package:doctor_appointment_app/doctors_management/screens/doctors_availability.dart';
+import 'package:doctor_appointment_app/pateints_management/pages/homepage.dart';
 import 'package:doctor_appointment_app/selection_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -28,6 +29,9 @@ class MyApp extends StatelessWidget {
           textTheme: GoogleFonts.latoTextTheme(),
         ),
         home: InitialScreen(),
+        routes: {
+          '/homepage': (context) =>  HomePage(),
+        },
       ),
     );
   }
