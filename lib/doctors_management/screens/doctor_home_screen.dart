@@ -1,8 +1,10 @@
+import 'package:doctor_appointment_app/doctors_management/screens/doctor_navigation_bar.dart';
 import 'package:doctor_appointment_app/doctors_management/screens/doctor_profile.dart';
 import 'package:doctor_appointment_app/doctors_management/screens/doctors_availability.dart';
+import 'package:doctor_appointment_app/doctors_management/screens/patientscreen.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'doctor_navigation_bar.dart'; // Import the navigation bar
+import 'package:firebase_auth/firebase_auth.dart';
 
 class DoctorHomeScreen extends StatefulWidget {
   @override
@@ -10,101 +12,221 @@ class DoctorHomeScreen extends StatefulWidget {
 }
 
 class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
-  int _selectedIndex = 0; // Set the initial index to 0 (Home)
+  int _selectedIndex = 0;
+  late String doctorId;
 
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
     if (index == 0) {
-      Navigator.pushReplacement(
+      Navigator.push(
           context, MaterialPageRoute(builder: (context) => DoctorHomeScreen()));
     }
     if (index == 1) {
-      Navigator.pushReplacement(context,
+      Navigator.push(context,
           MaterialPageRoute(builder: (context) => DoctorProfileScreen()));
     }
     if (index == 2) {
-      Navigator.pushReplacement(context,
+      Navigator.push(context,
           MaterialPageRoute(builder: (context) => DoctorAvailabilityScreen()));
+    }
+    if (index == 3) {
+      Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (context) => DummyPatientScreen(
+                    doctorId: doctorId,
+                  )));
     }
   }
 
-  final CollectionReference appointments =
-      FirebaseFirestore.instance.collection('Appoitnments');
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  List<Map<String, dynamic>> upcomingAppointments = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUpcomingAppointments();
+  }
+
+  void _fetchUpcomingAppointments() async {
+    User? user = _auth.currentUser;
+    if (user != null) {
+      doctorId = user.uid;
+      QuerySnapshot appointmentsSnapshot = await _firestore
+          .collection('appointments')
+          .where('doctorId', isEqualTo: user.uid)
+          .get();
+
+      setState(() {
+        upcomingAppointments = appointmentsSnapshot.docs
+            .map((doc) => doc.data() as Map<String, dynamic>)
+            .toList();
+        isLoading = false;
+      });
+    }
+  }
+
+  void _openNotifications() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => NotificationScreen()),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Doctor Home')),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: appointments.snapshots(),
-        builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
-          if (snapshot.hasError) {
-            print('Error: ${snapshot.error}');
-            return Center(
-                child: Text('Something went wrong: ${snapshot.error}'));
-          }
+        appBar: AppBar(
+          title: Text('Doctor Home'),
+          actions: [
+            IconButton(
+              icon: Icon(Icons.notifications),
+              onPressed: _openNotifications,
+            ),
+          ],
+        ),
+        body: isLoading
+            ? Center(child: CircularProgressIndicator())
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Text(
+                      'Upcoming Appointments',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blueGrey[800],
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: upcomingAppointments.isEmpty
+                        ? Center(child: Text('No upcoming appointments'))
+                        : ListView.builder(
+                            padding: EdgeInsets.all(16),
+                            itemCount: upcomingAppointments.length,
+                            itemBuilder: (context, index) {
+                              var appointment = upcomingAppointments[index];
+                              return Card(
+                                elevation: 4,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                margin: EdgeInsets.only(bottom: 16),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16.0),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Patient: ${appointment['name']}',
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      SizedBox(height: 8),
+                                      Text(
+                                        'Age: ${appointment['age']}',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          color: Colors.grey[600],
+                                        ),
+                                      ),
+                                      SizedBox(height: 8),
+                                      Text(
+                                        'Appointment Date: ${appointment['appointmentDate']}',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          color: Colors.grey[600],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              ),
+        bottomNavigationBar: DoctorNavigationBar(
+          currentIndex: _selectedIndex,
+          onTap: _onItemTapped,
+        ));
+  }
+}
 
-          if (snapshot.connectionState == ConnectionState.waiting) {
+class NotificationScreen extends StatelessWidget {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  void _handleAppointment(String appointmentId, bool isAccepted) async {
+    DocumentReference appointmentRef =
+        _firestore.collection('appointments').doc(appointmentId);
+
+    await appointmentRef.update({
+      'status': isAccepted ? 'accepted' : 'rejected',
+    });
+
+    // Optionally, notify the patient about the decision
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    User? user = _auth.currentUser;
+
+    return Scaffold(
+      appBar: AppBar(title: Text('Notifications')),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: _firestore
+            .collection('appointments')
+            .where('doctorId', isEqualTo: user?.uid)
+            .where('status', isEqualTo: 'pending')
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
             return Center(child: CircularProgressIndicator());
           }
 
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            print('No appointments data found.');
-            return Center(child: Text('No appointments found'));
-          }
-
-          final data = snapshot.requireData;
-          print('Appointments count: ${data.size}'); // Debug print
+          var notifications = snapshot.data?.docs ?? [];
 
           return ListView.builder(
-            itemCount: data.size,
+            itemCount: notifications.length,
             itemBuilder: (context, index) {
-              var appointmentData =
-                  data.docs[index].data() as Map<String, dynamic>;
-              print('Appointment Data: $appointmentData'); // Debug print
-              return Card(
-                margin: EdgeInsets.all(10.0),
-                child: Padding(
-                  padding: const EdgeInsets.all(10.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Patient: ${appointmentData['Patient Name']}',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(height: 5),
-                      Text(
-                        'Doctor: ${appointmentData['Dr Name']}',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                      SizedBox(height: 5),
-                      Text(
-                        'Time: ${appointmentData['Time']}',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
-                  ),
+              var appointment = notifications[index];
+              var appointmentData = appointment.data() as Map<String, dynamic>;
+
+              return ListTile(
+                title: Text('Patient: ${appointmentData['patientName']}'),
+                subtitle: Text(
+                    'Requested Time: ${appointmentData['appointmentTime']}'),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.check, color: Colors.green),
+                      onPressed: () => _handleAppointment(appointment.id, true),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.close, color: Colors.red),
+                      onPressed: () =>
+                          _handleAppointment(appointment.id, false),
+                    ),
+                  ],
                 ),
               );
             },
           );
         },
-      ),
-      bottomNavigationBar: DoctorNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
       ),
     );
   }

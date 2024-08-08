@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:doctor_appointment_app/doctors_management/screens/doctor_home_screen.dart';
 import 'package:doctor_appointment_app/doctors_management/screens/doctor_navigation_bar.dart';
 import 'package:doctor_appointment_app/doctors_management/screens/doctors_availability.dart';
+import 'package:doctor_appointment_app/doctors_management/screens/patientscreen.dart';
 import 'package:path/path.dart' as path;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:doctor_appointment_app/doctors_management/model/doctor_model.dart';
@@ -18,7 +19,7 @@ class DoctorProfileScreen extends StatefulWidget {
 
 class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
   int _selectedIndex = 1;
-
+  late String doctorId;
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -34,6 +35,14 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
     if (index == 2) {
       Navigator.push(context,
           MaterialPageRoute(builder: (context) => DoctorAvailabilityScreen()));
+    }
+    if (index == 3) {
+      Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (context) => DummyPatientScreen(
+                    doctorId: doctorId,
+                  )));
     }
   }
 
@@ -73,6 +82,7 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
 
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null) {
+      doctorId = user.uid;
       DocumentSnapshot docSnapshot = await FirebaseFirestore.instance
           .collection('doctors')
           .doc(user.uid)

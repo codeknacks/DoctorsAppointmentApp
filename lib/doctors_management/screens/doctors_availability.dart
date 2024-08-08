@@ -1,9 +1,10 @@
-import 'package:doctor_appointment_app/doctors_management/screens/doctor_home_screen.dart';
-import 'package:doctor_appointment_app/doctors_management/screens/doctor_profile.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'doctor_navigation_bar.dart'; // Ensure this is the correct import for the navigation bar
+import 'doctor_navigation_bar.dart';
+import 'doctor_home_screen.dart';
+import 'doctor_profile.dart';
+import 'patientscreen.dart';
 
 class DoctorAvailabilityScreen extends StatefulWidget {
   @override
@@ -13,6 +14,18 @@ class DoctorAvailabilityScreen extends StatefulWidget {
 
 class _DoctorAvailabilityScreenState extends State<DoctorAvailabilityScreen> {
   int _selectedIndex = 2;
+  late String doctorId;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  List<String> slots = [];
+  bool isLoading = false;
+  final TextEditingController _slotController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchExistingSlots();
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -30,23 +43,21 @@ class _DoctorAvailabilityScreenState extends State<DoctorAvailabilityScreen> {
       Navigator.push(context,
           MaterialPageRoute(builder: (context) => DoctorAvailabilityScreen()));
     }
-  }
-
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  List<String> slots = [];
-  bool isLoading = false;
-  final TextEditingController _slotController = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchExistingSlots();
+    if (index == 3) {
+      Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (context) => DummyPatientScreen(
+                    doctorId: doctorId,
+                  )));
+    }
   }
 
   void _fetchExistingSlots() async {
     User? user = _auth.currentUser;
+
     if (user != null) {
+      doctorId = user.uid;
       DocumentSnapshot doctorSnapshot =
           await _firestore.collection('doctors').doc(user.uid).get();
       if (doctorSnapshot.exists && doctorSnapshot.data() != null) {
@@ -115,7 +126,10 @@ class _DoctorAvailabilityScreenState extends State<DoctorAvailabilityScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Doctor Availability Management')),
+      appBar: AppBar(
+        title: Text('Doctor Availability Management'),
+        backgroundColor: Colors.teal,
+      ),
       body: isLoading
           ? Center(child: CircularProgressIndicator())
           : Padding(
@@ -126,8 +140,22 @@ class _DoctorAvailabilityScreenState extends State<DoctorAvailabilityScreen> {
                     controller: _slotController,
                     decoration: InputDecoration(
                       labelText: 'Enter available slot (e.g., 9 PM - 10 PM)',
+                      labelStyle: TextStyle(color: Colors.teal),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8.0),
+                        borderSide: BorderSide(
+                          color: Colors.teal,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8.0),
+                        borderSide: BorderSide(
+                          color: Colors.teal,
+                          width: 2.0,
+                        ),
+                      ),
                       suffixIcon: IconButton(
-                        icon: Icon(Icons.add),
+                        icon: Icon(Icons.add, color: Colors.teal),
                         onPressed: _addSlot,
                       ),
                     ),
@@ -138,13 +166,26 @@ class _DoctorAvailabilityScreenState extends State<DoctorAvailabilityScreen> {
                       itemCount: slots.length,
                       itemBuilder: (context, index) {
                         return Card(
+                          elevation: 3.0,
                           margin: EdgeInsets.symmetric(vertical: 8.0),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10.0),
+                          ),
                           child: ListTile(
-                            title: Text(slots[index]),
+                            contentPadding: EdgeInsets.symmetric(
+                                vertical: 10.0, horizontal: 16.0),
+                            title: Text(
+                              slots[index],
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            ),
                             trailing: IconButton(
-                              icon: Icon(Icons.delete),
+                              icon: Icon(Icons.delete, color: Colors.redAccent),
                               onPressed: () => _removeSlot(index),
                             ),
+                            tileColor: Colors.teal[50],
                           ),
                         );
                       },
@@ -152,7 +193,21 @@ class _DoctorAvailabilityScreenState extends State<DoctorAvailabilityScreen> {
                   ),
                   ElevatedButton(
                     onPressed: _saveSlots,
-                    child: Text('Save Slots'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.teal,
+                      padding: EdgeInsets.symmetric(
+                          horizontal: 32.0, vertical: 12.0),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                    ),
+                    child: Text(
+                      'Save Slots',
+                      style: TextStyle(
+                        fontSize: 16.0,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ],
               ),
