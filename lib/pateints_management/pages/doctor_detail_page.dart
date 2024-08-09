@@ -1,8 +1,10 @@
 // import 'package:doctor_appointment_app/pateints_management/components/apppointment.dart';
 // import 'package:firebase_database/firebase_database.dart';
-import 'package:doctor_appointment_app/pateints_management/pages/appointment_details.dart';
+import 'package:doctor_appointment_app/pateints_management/pages/display_appointment.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
+
 
 class DoctorDetailsPage extends StatefulWidget {
   final QueryDocumentSnapshot doctor;
@@ -15,74 +17,121 @@ class DoctorDetailsPage extends StatefulWidget {
 
 class _DoctorDetailsPageState extends State<DoctorDetailsPage> {
   String? selectedSlot;
-
+ DateTime? selectedDate;
   // Method to show the dialog box and handle input
   Future<void> _showInputDialog() async {
-    final nameController = TextEditingController();
-    final ageController = TextEditingController();
-    final MobileNumberController = TextEditingController();
+  final nameController = TextEditingController();
+  final ageController = TextEditingController();
+  final MobileNumberController = TextEditingController();
 
-    return showDialog<void>(
-      context: context,
-      barrierDismissible: false, // User must tap button!
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Enter Details'),
-          content: SingleChildScrollView(
-            child: ListBody(
-              children: <Widget>[
-                TextField(
-                  controller: nameController,
-                  decoration: InputDecoration(labelText: 'Name'),
-                ),
-                TextField(
-                  controller: ageController,
-                  decoration: InputDecoration(labelText: 'Age'),
-                  keyboardType: TextInputType.number,
-                ),
-                TextField(
-                  controller: MobileNumberController,
-                  decoration: InputDecoration(labelText: 'MobileNumber'),
-                  keyboardType: TextInputType.phone,
-                ),
-              ],
+  return showDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (BuildContext context) {
+      DateTime? localSelectedDate = selectedDate;
+
+      return StatefulBuilder(
+        builder: (BuildContext context, StateSetter setState) {
+          return AlertDialog(
+            title: Text('Enter Details'),
+            content: SingleChildScrollView(
+              child: ListBody(
+                children: <Widget>[
+                  TextField(
+                    controller: nameController,
+                    decoration: InputDecoration(labelText: 'Name'),
+                  ),
+                  TextField(
+                    controller: ageController,
+                    decoration: InputDecoration(labelText: 'Age'),
+                    keyboardType: TextInputType.number,
+                  ),
+                  TextField(
+                    controller: MobileNumberController,
+                    decoration: InputDecoration(labelText: 'Mobile Number'),
+                    keyboardType: TextInputType.phone,
+                  ),
+                  TextButton(
+                    child: Text('Select Date'),
+                    onPressed: () async {
+                      DateTime? pickedDate = await showDatePicker(
+                        context: context,
+                        initialDate: localSelectedDate ?? DateTime.now(),
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime(2100),
+                      );
+
+                      if (pickedDate != null) {
+                        setState(() {
+                          localSelectedDate = pickedDate;
+                        });
+                      }
+                    },
+                  ),
+                  Text(
+                    localSelectedDate != null
+                        ? DateFormat('y MMMM d').format(localSelectedDate!)
+                        : 'No date selected',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                ],
+              ),
             ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: Text('Cancel'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              child: Text('Done'),
-              onPressed: () {
-                // Save the input values to Firestore
-                _saveAppointment(
+            actions: <Widget>[
+              TextButton(
+                child: Text('Cancel'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+              TextButton(
+                child: Text('Done'),
+                onPressed: () {
+                  if (localSelectedDate == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Please select an appointment date'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    return;
+                  }
+
+                  setState(() {
+                    selectedDate = localSelectedDate;
+                  });
+
+                  _saveAppointment(
                     nameController.text,
                     int.parse(ageController.text),
-                    int.parse(
-                      MobileNumberController.text,
-                    ));
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
+                    int.parse(MobileNumberController.text),
+                    selectedDate!,
+                  );
+
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+}
 
   // Method to save the input values to Firestore
-void _saveAppointment(String name, int age, int mobileNumber) async {
+void _saveAppointment(String name, int age, int mobileNumber, DateTime date) async {
+  final DateFormat formatter = DateFormat('yyyy-MM-dd'); // Adjust format as needed
+  final String formattedDate = formatter.format(date);
+  
   try {
     await FirebaseFirestore.instance.collection('appointments').add({
       'doctorId': widget.doctor.id,
       'name': name,
       'age': age,
       'mobileNumber': mobileNumber,
-      
+      'appointmentDate': formattedDate,
+      'status': 'Pending',  // Initial status
     });
 
     // Show success message
@@ -93,16 +142,11 @@ void _saveAppointment(String name, int age, int mobileNumber) async {
       ),
     );
 
-    // Navigate to the AppointmentDetailsPage
+    // Navigate to the BookedAppointmentsPage
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => AppointmentDetailsPage(
-          name: name,
-          age: age,
-          mobileNumber: mobileNumber,
-          
-        ),
+        builder: (context) => AppointmentListPage()
       ),
     );
   } catch (e) {
@@ -115,6 +159,7 @@ void _saveAppointment(String name, int age, int mobileNumber) async {
     );
   }
 }
+
 
 
   @override
@@ -204,49 +249,32 @@ void _saveAppointment(String name, int age, int mobileNumber) async {
                       style: TextStyle(fontSize: 18)),
                   SizedBox(height: 20),
                   Column(
-                    children: [
-                      const Text('Available Slots'),
-                      const Divider(thickness: 2, color: Colors.black54),
-                      InkWell(
-                        onTap: () {
-                          _showInputDialog();
-                        },
-                        child: Container(
-                          decoration: BoxDecoration(
-                              color: Colors.green,
-                              border: Border.all(
-                                  color: Color.fromARGB(255, 0, 0, 0),
-                                  width: 3),
-                              borderRadius: BorderRadius.circular(3)),
-                          child: Text("${widget.doctor['availableSlots']}"),
-                        ),
-                      )
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  Center(
-                    child: ElevatedButton(
-                      onPressed: () {
+  children: [
+    const Text('Available Slots'),
+    const Divider(thickness: 2, color: Colors.black54),
+    // Iterate over each available slot and create a separate Container for each
+    ...List.generate(widget.doctor['availableSlots'].length, (index) {
+      return InkWell(
+        onTap: () {
+          _showInputDialog();
+        },
+        child: Container(
+          margin: const EdgeInsets.symmetric(vertical: 5),
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: Colors.green,
+            border: Border.all(
+                color: Color.fromARGB(255, 0, 0, 0), width: 3),
+            borderRadius: BorderRadius.circular(3),
+          ),
+          child: Text(widget.doctor['availableSlots'][index]),
+        ),
+      );
+    }),
+  ],
+)
 
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue, // Button background color
-                        foregroundColor: Colors.white, // Button text color
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: const Text(
-                        'Book Appointment',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
+                  
                 ],
               ),
             ),
