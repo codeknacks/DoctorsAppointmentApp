@@ -127,7 +127,11 @@ class _DoctorAvailabilityScreenState extends State<DoctorAvailabilityScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Doctor Availability Management'),
+        centerTitle: true,
+        title: Text(
+          ' Availability  ',
+          style: TextStyle(color: Colors.white),
+        ),
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -221,9 +225,10 @@ class _DoctorAvailabilityScreenState extends State<DoctorAvailabilityScreen> {
                       ),
                       child: Text(
                         'Save Slots',
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 16.0,
                           fontWeight: FontWeight.bold,
+                          color: Colors.white,
                         ),
                       ),
                     ),

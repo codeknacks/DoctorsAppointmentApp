@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:doctor_appointment_app/doctors_management/screens/doctor_home_screen.dart';
-import 'package:doctor_appointment_app/doctors_management/screens/doctor_login_screen.dart';
 import 'package:doctor_appointment_app/doctors_management/screens/doctor_navigation_bar.dart';
 import 'package:doctor_appointment_app/doctors_management/screens/doctors_availability.dart';
 import 'package:doctor_appointment_app/doctors_management/screens/patientscreen.dart';
@@ -186,7 +185,7 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
         context,
         MaterialPageRoute(
             builder: (context) =>
-                DoctorLoginScreen()), // Redirect to login screen
+                UserSelectionScreen()), // Redirect to login screen
       );
     } catch (e) {
       print('Error logging out: $e');
@@ -198,7 +197,11 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-          title: Text('Doctor Profile Management'),
+          centerTitle: true,
+          title: Text(
+            'Profile',
+            style: TextStyle(color: Colors.white),
+          ),
           flexibleSpace: Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -359,17 +362,12 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
                           elevation:
                               0, // Remove the button's shadow to show the gradient properly
                         ),
-                        child: Text('Save Profile'),
+                        child: Text(
+                          'Save Profile',
+                          style: TextStyle(color: Colors.white),
+                        ),
                       ),
                     )
-
-                    // ElevatedButton(
-                    //   onPressed: _saveProfile,
-                    //   style: ElevatedButton.styleFrom(
-                    //     backgroundColor: Colors.blueGrey[800],
-                    //   ),
-                    //   child: Text('Save Profile'),
-                    // ),
                   ],
                 ),
               ),

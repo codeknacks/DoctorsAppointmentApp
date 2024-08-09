@@ -1,5 +1,7 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:doctor_appointment_app/doctors_management/screens/doctor_signup_screen.dart';
 import 'package:doctor_appointment_app/doctors_management/screens/doctors_availability.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -18,6 +20,19 @@ class _DoctorLoginScreenState extends State<DoctorLoginScreen> {
   String? _email, _password;
   bool _isLoading = false;
 
+  void _saveDeviceToken(User? user) async {
+    if (user != null) {
+      FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
+      String? token = await _firebaseMessaging.getToken();
+      if (token != null) {
+        await FirebaseFirestore.instance
+            .collection('doctors')
+            .doc(user.uid)
+            .update({'deviceToken': token});
+      }
+    }
+  }
+
   void _loginWithEmail() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
@@ -31,6 +46,9 @@ class _DoctorLoginScreenState extends State<DoctorLoginScreen> {
           password: _password!,
         );
         User? user = userCredential.user;
+
+        // Save FCM token
+        _saveDeviceToken(user);
 
         Provider.of<UserProvider>(context, listen: false).setUser(user);
 
@@ -71,6 +89,9 @@ class _DoctorLoginScreenState extends State<DoctorLoginScreen> {
       UserCredential userCredential =
           await _auth.signInWithCredential(credential);
       User? user = userCredential.user;
+
+      // Save FCM token
+      _saveDeviceToken(user);
 
       Provider.of<UserProvider>(context, listen: false).setUser(user);
 
