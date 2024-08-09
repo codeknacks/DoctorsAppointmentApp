@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:doctor_appointment_app/doctors_management/screens/doctor_home_screen.dart';
+import 'package:doctor_appointment_app/doctors_management/screens/doctor_login_screen.dart';
 import 'package:doctor_appointment_app/doctors_management/screens/doctor_navigation_bar.dart';
 import 'package:doctor_appointment_app/doctors_management/screens/doctors_availability.dart';
 import 'package:doctor_appointment_app/doctors_management/screens/patientscreen.dart';
@@ -178,22 +179,41 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
     }
   }
 
+  Future<void> _logout() async {
+    try {
+      await FirebaseAuth.instance.signOut(); // Sign out from Firebase
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+            builder: (context) =>
+                DoctorLoginScreen()), // Redirect to login screen
+      );
+    } catch (e) {
+      print('Error logging out: $e');
+      // You can show an error message to the user if needed
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Doctor Profile Management'),
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.blue, Colors.cyan],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+          title: Text('Doctor Profile Management'),
+          flexibleSpace: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.blue, Colors.cyan],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
             ),
           ),
-        ),
-        // backgroundColor: Colors.blueGrey[900],
-      ),
+          actions: [
+            IconButton(
+              icon: Icon(Icons.logout),
+              onPressed: _logout, // Call the logout method on press
+            ),
+          ]),
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
           : Padding(

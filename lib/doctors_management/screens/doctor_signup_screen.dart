@@ -1,3 +1,4 @@
+import 'package:doctor_appointment_app/doctors_management/screens/doctor_login_screen.dart';
 import 'package:doctor_appointment_app/doctors_management/screens/otp_verification.dart';
 import 'package:doctor_appointment_app/doctors_management/provider/userprovider.dart';
 import 'package:flutter/material.dart';
@@ -146,6 +147,17 @@ class _DoctorSignUpScreenState extends State<DoctorSignUpScreen> {
                                     style: TextStyle(fontSize: 18.0),
                                   ),
                                 ),
+                          SizedBox(height: 20),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          DoctorLoginScreen()));
+                            },
+                            child: Text('Already have an account? Login'),
+                          ),
                         ],
                       ),
                     ),
