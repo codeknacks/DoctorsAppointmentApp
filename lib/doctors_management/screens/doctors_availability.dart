@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'doctor_navigation_bar.dart';
 import 'doctor_home_screen.dart';
 import 'doctor_profile.dart';
-import 'patientscreen.dart';
+import 'chatlistscreen.dart';
 
 class DoctorAvailabilityScreen extends StatefulWidget {
   @override
@@ -47,9 +47,7 @@ class _DoctorAvailabilityScreenState extends State<DoctorAvailabilityScreen> {
       Navigator.push(
           context,
           MaterialPageRoute(
-              builder: (context) => DummyPatientScreen(
-                    doctorId: doctorId,
-                  )));
+              builder: (context) => DoctorChatPatientListScreen()));
     }
   }
 

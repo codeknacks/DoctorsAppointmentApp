@@ -1,5 +1,7 @@
 import 'package:doctor_appointment_app/doctors_management/provider/userprovider.dart';
 import 'package:doctor_appointment_app/doctors_management/screens/doctors_availability.dart';
+import 'package:doctor_appointment_app/fcm_services.dart';
+import 'package:doctor_appointment_app/firebase_options.dart';
 import 'package:doctor_appointment_app/pateints_management/pages/homepage.dart';
 import 'package:doctor_appointment_app/selection_screen.dart';
 import 'package:flutter/material.dart';
@@ -10,7 +12,8 @@ import 'package:provider/provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
   runApp(MyApp());
 }
 
@@ -30,7 +33,7 @@ class MyApp extends StatelessWidget {
         ),
         home: InitialScreen(),
         routes: {
-          '/homepage': (context) =>  HomePage(),
+          '/homepage': (context) => HomePage(),
         },
       ),
     );

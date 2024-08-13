@@ -33,8 +33,8 @@ class DoctorNavigationBar extends StatelessWidget {
         ),
         BottomNavigationBarItem(
           backgroundColor: Colors.black,
-          icon: Icon(Icons.people),
-          label: 'Patients',
+          icon: Icon(Icons.chat),
+          label: 'Chats',
         ),
       ],
     );

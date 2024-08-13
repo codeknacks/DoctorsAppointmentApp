@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:doctor_appointment_app/doctors_management/screens/doctor_home_screen.dart';
 import 'package:doctor_appointment_app/doctors_management/screens/doctor_navigation_bar.dart';
 import 'package:doctor_appointment_app/doctors_management/screens/doctors_availability.dart';
-import 'package:doctor_appointment_app/doctors_management/screens/patientscreen.dart';
+import 'package:doctor_appointment_app/doctors_management/screens/chatlistscreen.dart';
 import 'package:path/path.dart' as path;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:doctor_appointment_app/doctors_management/model/doctor_model.dart';
@@ -41,9 +41,7 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
       Navigator.push(
           context,
           MaterialPageRoute(
-              builder: (context) => DummyPatientScreen(
-                    doctorId: doctorId,
-                  )));
+              builder: (context) => DoctorChatPatientListScreen()));
     }
   }
 
