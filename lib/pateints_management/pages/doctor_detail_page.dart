@@ -1,10 +1,7 @@
-// import 'package:doctor_appointment_app/pateints_management/components/apppointment.dart';
-// import 'package:firebase_database/firebase_database.dart';
 import 'package:doctor_appointment_app/pateints_management/pages/display_appointment.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
-
 
 class DoctorDetailsPage extends StatefulWidget {
   final QueryDocumentSnapshot doctor;
@@ -17,150 +14,153 @@ class DoctorDetailsPage extends StatefulWidget {
 
 class _DoctorDetailsPageState extends State<DoctorDetailsPage> {
   String? selectedSlot;
- DateTime? selectedDate;
+  DateTime? selectedDate;
+
   // Method to show the dialog box and handle input
   Future<void> _showInputDialog() async {
-  final nameController = TextEditingController();
-  final ageController = TextEditingController();
-  final MobileNumberController = TextEditingController();
+    final nameController = TextEditingController();
+    final ageController = TextEditingController();
+    final mobileNumberController = TextEditingController();
 
-  return showDialog<void>(
-    context: context,
-    barrierDismissible: false,
-    builder: (BuildContext context) {
-      DateTime? localSelectedDate = selectedDate;
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        DateTime? localSelectedDate = selectedDate;
 
-      return StatefulBuilder(
-        builder: (BuildContext context, StateSetter setState) {
-          return AlertDialog(
-            title: Text('Enter Details'),
-            content: SingleChildScrollView(
-              child: ListBody(
-                children: <Widget>[
-                  TextField(
-                    controller: nameController,
-                    decoration: InputDecoration(labelText: 'Name'),
-                  ),
-                  TextField(
-                    controller: ageController,
-                    decoration: InputDecoration(labelText: 'Age'),
-                    keyboardType: TextInputType.number,
-                  ),
-                  TextField(
-                    controller: MobileNumberController,
-                    decoration: InputDecoration(labelText: 'Mobile Number'),
-                    keyboardType: TextInputType.phone,
-                  ),
-                  TextButton(
-                    child: Text('Select Date'),
-                    onPressed: () async {
-                      DateTime? pickedDate = await showDatePicker(
-                        context: context,
-                        initialDate: localSelectedDate ?? DateTime.now(),
-                        firstDate: DateTime(2000),
-                        lastDate: DateTime(2100),
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            return AlertDialog(
+              title: Text('Enter Details'),
+              content: SingleChildScrollView(
+                child: ListBody(
+                  children: <Widget>[
+                    TextField(
+                      controller: nameController,
+                      decoration: InputDecoration(labelText: 'Name'),
+                    ),
+                    TextField(
+                      controller: ageController,
+                      decoration: InputDecoration(labelText: 'Age'),
+                      keyboardType: TextInputType.number,
+                    ),
+                    TextField(
+                      controller: mobileNumberController,
+                      decoration: InputDecoration(labelText: 'Mobile Number'),
+                      keyboardType: TextInputType.phone,
+                    ),
+                    TextButton(
+                      child: Text('Select Date'),
+                      onPressed: () async {
+                        DateTime? pickedDate = await showDatePicker(
+                          context: context,
+                          initialDate: localSelectedDate ?? DateTime.now(),
+                          firstDate: DateTime(2000),
+                          lastDate: DateTime(2100),
+                        );
+
+                        if (pickedDate != null) {
+                          setState(() {
+                            localSelectedDate = pickedDate;
+                          });
+                        }
+                      },
+                    ),
+                    Text(
+                      localSelectedDate != null
+                          ? DateFormat('y MMMM d').format(localSelectedDate!)
+                          : 'No date selected',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                  ],
+                ),
+              ),
+              actions: <Widget>[
+                TextButton(
+                  child: Text('Cancel'),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+                TextButton(
+                  child: Text('Done'),
+                  onPressed: () {
+                    if (localSelectedDate == null || selectedSlot == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                              'Please select an appointment date and time slot'),
+                          backgroundColor: Colors.red,
+                        ),
                       );
+                      return;
+                    }
 
-                      if (pickedDate != null) {
-                        setState(() {
-                          localSelectedDate = pickedDate;
-                        });
-                      }
-                    },
-                  ),
-                  Text(
-                    localSelectedDate != null
-                        ? DateFormat('y MMMM d').format(localSelectedDate!)
-                        : 'No date selected',
-                    style: TextStyle(fontSize: 16),
-                  ),
-                ],
-              ),
-            ),
-            actions: <Widget>[
-              TextButton(
-                child: Text('Cancel'),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-              ),
-              TextButton(
-                child: Text('Done'),
-                onPressed: () {
-                  if (localSelectedDate == null) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Please select an appointment date'),
-                        backgroundColor: Colors.red,
-                      ),
+                    setState(() {
+                      selectedDate = localSelectedDate;
+                    });
+
+                    _saveAppointment(
+                      nameController.text,
+                      int.parse(ageController.text),
+                      int.parse(mobileNumberController.text),
+                      selectedDate!,
+                      selectedSlot!,
                     );
-                    return;
-                  }
 
-                  setState(() {
-                    selectedDate = localSelectedDate;
-                  });
-
-                  _saveAppointment(
-                    nameController.text,
-                    int.parse(ageController.text),
-                    int.parse(MobileNumberController.text),
-                    selectedDate!,
-                  );
-
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
-          );
-        },
-      );
-    },
-  );
-}
-
-  // Method to save the input values to Firestore
-void _saveAppointment(String name, int age, int mobileNumber, DateTime date) async {
-  final DateFormat formatter = DateFormat('yyyy-MM-dd'); // Adjust format as needed
-  final String formattedDate = formatter.format(date);
-  
-  try {
-    await FirebaseFirestore.instance.collection('appointments').add({
-      'doctorId': widget.doctor.id,
-      'name': name,
-      'age': age,
-      'mobileNumber': mobileNumber,
-      'appointmentDate': formattedDate,
-      'status': 'Pending',  // Initial status
-    });
-
-    // Show success message
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Request submitted'),
-        backgroundColor: Colors.green,
-      ),
-    );
-
-    // Navigate to the BookedAppointmentsPage
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => AppointmentListPage()
-      ),
-    );
-  } catch (e) {
-    // Show error message in case of failure
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Failed to submit request: $e'),
-        backgroundColor: Colors.red,
-      ),
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
-}
 
+  // Method to save the input values to Firestore
+  void _saveAppointment(String name, int age, int mobileNumber, DateTime date,
+      String slot) async {
+    final DateFormat formatter = DateFormat('yyyy-MM-dd'); // Adjust format as needed
+    final String formattedDate = formatter.format(date);
 
+    try {
+      await FirebaseFirestore.instance.collection('appointments').add({
+        'doctorId': widget.doctor.id,
+        'name': name,
+        'age': age,
+        'mobileNumber': mobileNumber,
+        'appointmentDate': formattedDate,
+        'appointmentSlot': slot,  // Save the selected slot
+        'status': 'Pending',  // Initial status
+      });
+
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Request submitted'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      // Navigate to the BookedAppointmentsPage
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => AppointmentListPage(),
+        ),
+      );
+    } catch (e) {
+      // Show error message in case of failure
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to submit request: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -212,12 +212,12 @@ void _saveAppointment(String name, int age, int mobileNumber, DateTime date) asy
                   ),
                   SizedBox(height: 10),
                   Text(
-                    "ratePerHour: ${widget.doctor['ratePerHour']}",
+                    "Rate Per Hour: ${widget.doctor['ratePerHour']}",
                     style: TextStyle(fontSize: 18),
                   ),
                   SizedBox(height: 10),
                   Text(
-                    "specialization: ${widget.doctor['specialization']}",
+                    "Specialization: ${widget.doctor['specialization']}",
                     style: TextStyle(fontSize: 18),
                   ),
                   SizedBox(height: 20),
@@ -249,32 +249,37 @@ void _saveAppointment(String name, int age, int mobileNumber, DateTime date) asy
                       style: TextStyle(fontSize: 18)),
                   SizedBox(height: 20),
                   Column(
-  children: [
-    const Text('Available Slots'),
-    const Divider(thickness: 2, color: Colors.black54),
-    // Iterate over each available slot and create a separate Container for each
-    ...List.generate(widget.doctor['availableSlots'].length, (index) {
-      return InkWell(
-        onTap: () {
-          _showInputDialog();
-        },
-        child: Container(
-          margin: const EdgeInsets.symmetric(vertical: 5),
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: Colors.green,
-            border: Border.all(
-                color: Color.fromARGB(255, 0, 0, 0), width: 3),
-            borderRadius: BorderRadius.circular(3),
-          ),
-          child: Text(widget.doctor['availableSlots'][index]),
-        ),
-      );
-    }),
-  ],
-)
-
-                  
+                    children: [
+                      const Text('Available Slots'),
+                      const Divider(thickness: 2, color: Colors.black54),
+                      // Iterate over each available slot and create a separate Container for each
+                      ...List.generate(widget.doctor['availableSlots'].length,
+                          (index) {
+                        return InkWell(
+                          onTap: () {
+                            setState(() {
+                              selectedSlot = widget.doctor['availableSlots'][index];
+                            });
+                            _showInputDialog();
+                          },
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(vertical: 5),
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: selectedSlot ==
+                                      widget.doctor['availableSlots'][index]
+                                  ? Colors.blue
+                                  : Colors.green,
+                              border: Border.all(
+                                  color: Color.fromARGB(255, 0, 0, 0), width: 3),
+                              borderRadius: BorderRadius.circular(3),
+                            ),
+                            child: Text(widget.doctor['availableSlots'][index]),
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
                 ],
               ),
             ),
