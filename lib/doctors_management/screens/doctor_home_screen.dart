@@ -58,6 +58,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
       QuerySnapshot appointmentsSnapshot = await _firestore
           .collection('appointments')
           .where('doctorId', isEqualTo: user.uid)
+          .where('status', isEqualTo: 'accepted')
           .get();
 
       setState(() {

@@ -3,10 +3,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class DoctorChatScreen extends StatefulWidget {
-  final String patientId;
-  final String patientName;
+  final String patientName; // Receive the patientName
 
-  DoctorChatScreen({required this.patientName, required this.patientId});
+  DoctorChatScreen({required this.patientName});
 
   @override
   _DoctorChatScreenState createState() => _DoctorChatScreenState();
@@ -27,26 +26,28 @@ class _DoctorChatScreenState extends State<DoctorChatScreen> {
     }
   }
 
-  void _sendMessage() {
+  void _sendMessage() async {
     if (_messageController.text.trim().isEmpty) return;
 
-    _firestore.collection('chats').add({
-      'doctorId': doctorId,
-      'patientId': widget.patientId,
-      'message': _messageController.text,
-      'timestamp': FieldValue.serverTimestamp(),
-      'sender':
-          'doctor', // could also be 'patient' based on who sends the message
-    });
-
-    _messageController.clear();
+    try {
+      await _firestore.collection('chats').add({
+        'doctorId': doctorId,
+        'message': _messageController.text,
+        'timestamp': FieldValue.serverTimestamp(),
+        'sender': 'doctor',
+        'patientName': widget.patientName, // Store patientName
+      });
+      _messageController.clear();
+    } catch (e) {
+      print('Error sending message: $e');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Chat with ${widget.patientName}'),
+        title: Text('Chat with ${widget.patientName}'), // Display patientName
       ),
       body: Column(
         children: [
@@ -55,13 +56,20 @@ class _DoctorChatScreenState extends State<DoctorChatScreen> {
               stream: _firestore
                   .collection('chats')
                   .where('doctorId', isEqualTo: doctorId)
-                  .where('patientId', isEqualTo: widget.patientId)
+                  .where('patientName', isEqualTo: widget.patientName)
                   .orderBy('timestamp', descending: true)
                   .snapshots(),
               builder: (context, snapshot) {
-                if (!snapshot.hasData) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
                   return Center(child: CircularProgressIndicator());
                 }
+                if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                }
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return Center(child: Text('No messages yet'));
+                }
+
                 var messages = snapshot.data!.docs;
 
                 return ListView.builder(
@@ -71,8 +79,24 @@ class _DoctorChatScreenState extends State<DoctorChatScreen> {
                     var message =
                         messages[index].data() as Map<String, dynamic>;
                     return ListTile(
-                      title: Text(message['message']),
-                      subtitle: Text(message['sender']),
+                      title: Align(
+                        alignment: message['sender'] == 'doctor'
+                            ? Alignment.centerRight
+                            : Alignment.centerLeft,
+                        child: Container(
+                          padding: const EdgeInsets.all(8.0),
+                          decoration: BoxDecoration(
+                            color: message['sender'] == 'doctor'
+                                ? Colors.blue
+                                : Colors.grey,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            message['message'],
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      ),
                     );
                   },
                 );
@@ -88,6 +112,7 @@ class _DoctorChatScreenState extends State<DoctorChatScreen> {
                     controller: _messageController,
                     decoration: InputDecoration(
                       labelText: 'Type your message...',
+                      border: OutlineInputBorder(),
                     ),
                   ),
                 ),

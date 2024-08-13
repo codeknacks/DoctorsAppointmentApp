@@ -60,6 +60,7 @@ class _DoctorChatPatientListScreenState
       QuerySnapshot appointmentsSnapshot = await _firestore
           .collection('appointments')
           .where('doctorId', isEqualTo: user.uid)
+          .where('status', isEqualTo: 'accepted')
           .get();
 
       setState(() {
@@ -135,7 +136,7 @@ class _DoctorChatPatientListScreenState
                                     Icon(Icons.person, color: Colors.blue),
                                     SizedBox(width: 8),
                                     Text(
-                                      'Patient: ${patient['name']}',
+                                      'Patient Name: ${patient['name']}',
                                       style: TextStyle(
                                         fontSize: 18,
                                         fontWeight: FontWeight.w600,
@@ -151,9 +152,8 @@ class _DoctorChatPatientListScreenState
                                             MaterialPageRoute(
                                                 builder: (context) =>
                                                     DoctorChatScreen(
-                                                        patientId: "patientId",
                                                         patientName:
-                                                            "patientName")));
+                                                            patient['name'])));
                                       },
                                     )
                                   ],
