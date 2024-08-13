@@ -50,7 +50,6 @@ dependencies:
   firebase_database: ^11.0.4
   firebase_messaging: ^15.0.4
   http: ^1.2.2
-
 dev_dependencies:
   flutter_test:
     sdk: flutter

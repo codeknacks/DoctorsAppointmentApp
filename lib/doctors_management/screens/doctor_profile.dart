@@ -178,22 +178,45 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
     }
   }
 
+  Future<void> _logout() async {
+    try {
+      await FirebaseAuth.instance.signOut(); // Sign out from Firebase
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+            builder: (context) =>
+                UserSelectionScreen()), // Redirect to login screen
+      );
+    } catch (e) {
+      print('Error logging out: $e');
+      // You can show an error message to the user if needed
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Doctor Profile Management'),
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.blue, Colors.cyan],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+          centerTitle: true,
+          title: Text(
+            'Profile',
+            style: TextStyle(color: Colors.white),
+          ),
+          flexibleSpace: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.blue, Colors.cyan],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
             ),
           ),
-        ),
-        // backgroundColor: Colors.blueGrey[900],
-      ),
+          actions: [
+            IconButton(
+              icon: Icon(Icons.logout),
+              onPressed: _logout, // Call the logout method on press
+            ),
+          ]),
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
           : Padding(
@@ -339,17 +362,12 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
                           elevation:
                               0, // Remove the button's shadow to show the gradient properly
                         ),
-                        child: Text('Save Profile'),
+                        child: Text(
+                          'Save Profile',
+                          style: TextStyle(color: Colors.white),
+                        ),
                       ),
                     )
-
-                    // ElevatedButton(
-                    //   onPressed: _saveProfile,
-                    //   style: ElevatedButton.styleFrom(
-                    //     backgroundColor: Colors.blueGrey[800],
-                    //   ),
-                    //   child: Text('Save Profile'),
-                    // ),
                   ],
                 ),
               ),
