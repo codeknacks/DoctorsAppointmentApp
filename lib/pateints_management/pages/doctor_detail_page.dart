@@ -1,4 +1,7 @@
+import 'package:doctor_appointment_app/pateints_management/components/nav_bar.dart';
 import 'package:doctor_appointment_app/pateints_management/pages/display_appointment.dart';
+import 'package:doctor_appointment_app/pateints_management/pages/profile_pateint.dart';
+import 'package:doctor_appointment_app/pateints_management/services/notification_service.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
@@ -13,9 +16,14 @@ class DoctorDetailsPage extends StatefulWidget {
 }
 
 class _DoctorDetailsPageState extends State<DoctorDetailsPage> {
+  int _selectedIndex = 0;
   String? selectedSlot;
   DateTime? selectedDate;
 
+
+  //nav baar 
+
+ 
   // Method to show the dialog box and handle input
   Future<void> _showInputDialog() async {
     final nameController = TextEditingController();
@@ -103,7 +111,7 @@ class _DoctorDetailsPageState extends State<DoctorDetailsPage> {
                     _saveAppointment(
                       nameController.text,
                       int.parse(ageController.text),
-                      int.parse(mobileNumberController.text),
+                      mobileNumberController.text,
                       selectedDate!,
                       selectedSlot!,
                     );
@@ -120,21 +128,42 @@ class _DoctorDetailsPageState extends State<DoctorDetailsPage> {
   }
 
   // Method to save the input values to Firestore
-  void _saveAppointment(String name, int age, int mobileNumber, DateTime date,
-      String slot) async {
-    final DateFormat formatter = DateFormat('yyyy-MM-dd'); // Adjust format as needed
-    final String formattedDate = formatter.format(date);
+ void _saveAppointment(String name, int age, String mobileNumber, DateTime date, String slot) async {
+  final DateFormat formatter = DateFormat('yyyy-MM-dd'); // Adjust format as needed
+  final String formattedDate = formatter.format(date);
 
-    try {
+  try {
+    // Fetch the patient's data from Firestore based on the mobile number (as a string)
+    QuerySnapshot patientSnapshot = await FirebaseFirestore.instance
+        .collection('patients')
+        .where('mobile', isEqualTo: mobileNumber)
+        .limit(1)
+        .get();
+    
+    if (patientSnapshot.docs.isNotEmpty) {
+      DocumentSnapshot patientDoc = patientSnapshot.docs.first;
+      String patientId = patientDoc['patient_id'];
+      String deviceToken = patientDoc['device_token'];
+
+      // Save the appointment to Firestore
       await FirebaseFirestore.instance.collection('appointments').add({
         'doctorId': widget.doctor.id,
+        'patientId': patientId,
         'name': name,
         'age': age,
         'mobileNumber': mobileNumber,
         'appointmentDate': formattedDate,
-        'appointmentSlot': slot,  // Save the selected slot
+        'appointmentSlot': slot,
         'status': 'Pending',  // Initial status
+        'patientDeviceToken': deviceToken, // Store patient's device token
       });
+
+      // Fetch the doctor's device token from Firestore
+      // DocumentSnapshot doctorSnapshot = await FirebaseFirestore.instance.collection('doctors').doc(widget.doctor.id).get();
+      // String doctorDeviceToken = doctorSnapshot['deviceToken'];
+
+      // // Send notification to the doctor
+      // await NotificationService.sendNotificationToDoctor(doctorDeviceToken, context, widget.doctor.id);
 
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
@@ -151,16 +180,25 @@ class _DoctorDetailsPageState extends State<DoctorDetailsPage> {
           builder: (context) => AppointmentListPage(),
         ),
       );
-    } catch (e) {
-      // Show error message in case of failure
+    } else {
+      // Show error message if patient not found
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to submit request: $e'),
+        const SnackBar(
+          content: Text('Patient not found'),
           backgroundColor: Colors.red,
         ),
       );
     }
+  } catch (e) {
+    // Show error message in case of failure
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Failed to submit request: $e'),
+        backgroundColor: Colors.red,
+      ),
+    );
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -279,13 +317,27 @@ class _DoctorDetailsPageState extends State<DoctorDetailsPage> {
                         );
                       }),
                     ],
+                    
                   ),
                 ],
+                
               ),
+              
             ),
           ),
         ),
       ),
+       floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // Navigate to ProfilePage
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => PatientProfilePage()),
+          );
+        },
+        child: const Icon(Icons.person),
+      ),
+      
     );
   }
 }

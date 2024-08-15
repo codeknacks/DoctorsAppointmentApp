@@ -2,6 +2,7 @@ import 'package:doctor_appointment_app/doctors_management/provider/userprovider.
 import 'package:doctor_appointment_app/doctors_management/screens/doctors_availability.dart';
 import 'package:doctor_appointment_app/fcm_services.dart';
 import 'package:doctor_appointment_app/firebase_options.dart';
+import 'package:doctor_appointment_app/pateints_management/components/nav_bar.dart';
 import 'package:doctor_appointment_app/pateints_management/pages/homepage.dart';
 import 'package:doctor_appointment_app/selection_screen.dart';
 import 'package:flutter/material.dart';
@@ -33,7 +34,7 @@ class MyApp extends StatelessWidget {
         ),
         home: InitialScreen(),
         routes: {
-          '/homepage': (context) => HomePage(),
+          '/homepage': (context) => NavBAr(),
         },
       ),
     );

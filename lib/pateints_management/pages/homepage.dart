@@ -4,11 +4,17 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 
 class HomePage extends StatefulWidget {
+  
+  
+
+
+
   @override
   _HomePageState createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
+
   String searchQuery = "";
   List<QueryDocumentSnapshot> doctors = [];
 
@@ -58,6 +64,7 @@ class _HomePageState extends State<HomePage> {
                       MaterialPageRoute(
                         builder: (context) => DoctorDetailsPage(
                           doctor: doctors[index],
+                        
                         ),
                       ),
                     );
