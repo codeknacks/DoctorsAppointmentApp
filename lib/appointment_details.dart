@@ -5,15 +5,15 @@ class AppointmentDetailsPage extends StatelessWidget {
   final String name;
   final int age;
   final int mobileNumber;
-  final String appointmentId;  // Add the appointment ID to update the status
-  final String status;  // Add the status field
+  final String appointmentId; // Add the appointment ID to update the status
+  final String status; // Add the status field
 
   AppointmentDetailsPage({
     required this.name,
     required this.age,
     required this.mobileNumber,
     required this.appointmentId,
-    required this.status,  // Add this parameter
+    required this.status, // Add this parameter
   });
 
   // Method to update the status

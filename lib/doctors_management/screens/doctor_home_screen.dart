@@ -58,7 +58,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
       QuerySnapshot appointmentsSnapshot = await _firestore
           .collection('appointments')
           .where('doctorId', isEqualTo: user.uid)
-          .where('status', isEqualTo: 'accepted')
+          .where('status', isEqualTo: 'Pending')
           .get();
 
       setState(() {
@@ -248,7 +248,7 @@ class NotificationScreen extends StatelessWidget {
         stream: _firestore
             .collection('appointments')
             .where('doctorId', isEqualTo: user?.uid)
-            .where('status', isEqualTo: 'pending')
+            .where('status', isEqualTo: 'Pending')
             .snapshots(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {

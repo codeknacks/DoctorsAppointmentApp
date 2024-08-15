@@ -60,13 +60,32 @@ class _DoctorChatPatientListScreenState
       QuerySnapshot appointmentsSnapshot = await _firestore
           .collection('appointments')
           .where('doctorId', isEqualTo: user.uid)
-          .where('status', isEqualTo: 'accepted')
+          .where('status', isEqualTo: 'Pending')
           .get();
 
+      List<Map<String, dynamic>> fetchedPatients = [];
+
+      for (var doc in appointmentsSnapshot.docs) {
+        Map<String, dynamic> patientData = doc.data() as Map<String, dynamic>;
+
+        // Fetch profile picture URL from the 'patients' collection
+        String patientId = patientData['patientId'];
+        DocumentSnapshot patientSnapshot =
+            await _firestore.collection('patients').doc(patientId).get();
+
+        if (patientSnapshot.exists) {
+          Map<String, dynamic>? patientInfo =
+              patientSnapshot.data() as Map<String, dynamic>?;
+          String profilePicUrl = patientInfo?['profile_image'] ?? '';
+
+          // Add profilePicUrl to patientData
+          patientData['profile_image'] = profilePicUrl;
+          fetchedPatients.add(patientData);
+        }
+      }
+
       setState(() {
-        patients = appointmentsSnapshot.docs
-            .map((doc) => doc.data() as Map<String, dynamic>)
-            .toList();
+        patients = fetchedPatients;
         isLoading = false;
       });
     }
@@ -133,7 +152,19 @@ class _DoctorChatPatientListScreenState
                                 padding: const EdgeInsets.all(16.0),
                                 child: Row(
                                   children: [
-                                    Icon(Icons.person, color: Colors.blue),
+                                    // Display profile picture or fallback to an icon if unavailable
+                                    patient['profile_image'] != null &&
+                                            patient['profile_image'] != ''
+                                        ? ClipOval(
+                                            child: Image.network(
+                                              patient['profile_image'],
+                                              width: 50,
+                                              height: 50,
+                                              fit: BoxFit.cover,
+                                            ),
+                                          )
+                                        : Icon(Icons.person,
+                                            color: Colors.blue),
                                     SizedBox(width: 8),
                                     Text(
                                       'Patient Name: ${patient['name']}',

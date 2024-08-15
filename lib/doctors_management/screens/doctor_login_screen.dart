@@ -20,15 +20,37 @@ class _DoctorLoginScreenState extends State<DoctorLoginScreen> {
   String? _email, _password;
   bool _isLoading = false;
 
+  // void _saveDeviceToken(User? user) async {
+  //   if (user != null) {
+  //     FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
+  //     String? token = await _firebaseMessaging.getToken();
+  //     if (token != null) {
+  //       await FirebaseFirestore.instance
+  //           .collection('doctors')
+  //           .doc(user.uid)
+  //           .update({'deviceToken': token});
+  //     }
+  //   }
+  // }
   void _saveDeviceToken(User? user) async {
     if (user != null) {
       FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
       String? token = await _firebaseMessaging.getToken();
       if (token != null) {
-        await FirebaseFirestore.instance
-            .collection('doctors')
-            .doc(user.uid)
-            .update({'deviceToken': token});
+        DocumentReference docRef =
+            FirebaseFirestore.instance.collection('doctors').doc(user.uid);
+
+        try {
+          DocumentSnapshot docSnapshot = await docRef.get();
+          if (docSnapshot.exists) {
+            await docRef.update({'deviceToken': token});
+          } else {
+            await docRef.set({'deviceToken': token});
+          }
+        } catch (e) {
+          // Handle any errors that occur during the update or set operation
+          print("Error saving device token: $e");
+        }
       }
     }
   }
