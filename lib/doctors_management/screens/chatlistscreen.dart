@@ -183,8 +183,11 @@ class _DoctorChatPatientListScreenState
                                             MaterialPageRoute(
                                                 builder: (context) =>
                                                     DoctorChatScreen(
-                                                        patientName:
-                                                            patient['name'])));
+                                                      patientName:
+                                                          patient['name'],
+                                                      patientId:
+                                                          patient['patientId'],
+                                                    )));
                                       },
                                     )
                                   ],
