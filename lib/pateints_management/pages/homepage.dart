@@ -2,19 +2,12 @@ import 'package:doctor_appointment_app/pateints_management/pages/doctor_detail_p
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-
 class HomePage extends StatefulWidget {
-  
-  
-
-
-
   @override
   _HomePageState createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
-
   String searchQuery = "";
   List<QueryDocumentSnapshot> doctors = [];
 
@@ -64,7 +57,6 @@ class _HomePageState extends State<HomePage> {
                       MaterialPageRoute(
                         builder: (context) => DoctorDetailsPage(
                           doctor: doctors[index],
-                        
                         ),
                       ),
                     );

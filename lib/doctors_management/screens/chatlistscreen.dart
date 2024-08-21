@@ -60,7 +60,7 @@ class _DoctorChatPatientListScreenState
       QuerySnapshot appointmentsSnapshot = await _firestore
           .collection('appointments')
           .where('doctorId', isEqualTo: user.uid)
-          .where('status', isEqualTo: 'Pending')
+          .where('status', isEqualTo: 'accepted')
           .get();
 
       List<Map<String, dynamic>> fetchedPatients = [];
