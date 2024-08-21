@@ -33,10 +33,10 @@ class _PatientProfilePageState extends State<PatientProfilePage> {
     _patientId = prefs.getString('patient_id');
 
     if (_patientId != null) {
-      _loadPatientData();
+      await _loadPatientData();
     } else {
       setState(() {
-        _isEditing = true;
+        _isEditing = true; // Allow editing if no data is found
       });
     }
   }
@@ -53,13 +53,17 @@ class _PatientProfilePageState extends State<PatientProfilePage> {
       final data = doc.data() as Map<String, dynamic>;
 
       _nameController.text = data['name'] ?? '';
-      _ageController.text = data['age'].toString();
+      _ageController.text = data['age']?.toString() ?? '';
       _mobileController.text = data['mobile'] ?? '';
       _addressController.text = data['address'] ?? '';
       _profileImageUrl = data['profile_image'];
 
       setState(() {
-        _isEditing = false;
+        _isEditing = false; // Switch to view mode since data exists
+      });
+    } else {
+      setState(() {
+        _isEditing = true; // Allow editing if no data is found
       });
     }
   }
@@ -67,7 +71,10 @@ class _PatientProfilePageState extends State<PatientProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(_isEditing ? 'Add details' : 'Patient Profile')),
+      appBar: AppBar(title: Text(_isEditing ? 'Add Details' : 'Patient Profile'),
+      automaticallyImplyLeading: false,
+      centerTitle: true,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: _isEditing ? _buildForm() : _buildProfileView(),
@@ -116,27 +123,91 @@ class _PatientProfilePageState extends State<PatientProfilePage> {
   }
 
   Widget _buildProfileView() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (_profileImageUrl != null)
-          Image.network(_profileImageUrl!),
-        Text('Name: ${_nameController.text}'),
-        Text('Age: ${_ageController.text}'),
-        Text('Mobile: ${_mobileController.text}'),
-        Text('Address: ${_addressController.text}'),
-        SizedBox(height: 16),
-        ElevatedButton(
-          onPressed: () {
-            setState(() {
-              _isEditing = true;
-            });
-          },
-          child: Text('Edit Details'),
+  return Center(
+    child: Card(
+      elevation: 4.0, // Controls the shadow depth of the card
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16.0), // Rounds the corners of the card
+      ),
+      margin: const EdgeInsets.all(16.0), // Space around the card
+      child: Padding(
+        padding: const EdgeInsets.all(16.0), // Space inside the card
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: CircleAvatar(
+                radius: 50.0, // Adjust the radius as needed
+                backgroundImage: _profileImageUrl != null
+                    ? NetworkImage(_profileImageUrl!)
+                    : null,
+                backgroundColor: Colors.grey[200], // Fallback background color
+                child: _profileImageUrl == null
+                    ? Icon(Icons.person, size: 50.0, color: Colors.grey[400])
+                    : null, // Placeholder icon if no image is available
+              ),
+            ),
+            SizedBox(height: 16),
+            Text(
+              'Name: ${_nameController.text}',
+              style: TextStyle(
+                fontSize: 18.0,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Age: ${_ageController.text}',
+              style: TextStyle(
+                fontSize: 16.0,
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Mobile: ${_mobileController.text}',
+              style: TextStyle(
+                fontSize: 16.0,
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Address: ${_addressController.text}',
+              style: TextStyle(
+                fontSize: 16.0,
+              ),
+            ),
+            SizedBox(height: 200),
+           Center(
+  child: ElevatedButton(
+    onPressed: () {
+      setState(() {
+        _isEditing = true;
+      });
+    },
+    style: ElevatedButton.styleFrom(
+      backgroundColor: Colors.blue, // Button background color
+      textStyle: TextStyle(color: Colors.white), // Button text color
+      padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0), // Button padding
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(30.0), // Rounded corners
+      ),
+      elevation: 5.0, // Shadow elevation
+    ),
+    child: Text(
+      'Edit Details',
+      style: TextStyle(
+        fontSize: 16.0, // Text size
+        fontWeight: FontWeight.bold, // Text weight
+      ),
+    ),
+  ),)
+          ]
         ),
-      ],
-    );
-  }
+      ),
+    ),
+  );
+}
+
 
   Future<void> _pickImage() async {
     final ImagePicker picker = ImagePicker();

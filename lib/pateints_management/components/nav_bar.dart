@@ -28,7 +28,7 @@ class _NavBArState extends State<NavBAr> {
         currentIndex: _selectedIndex,
         backgroundColor: Colors.black,
         onTap: (index) => setState(() => _selectedIndex = index),
-        selectedItemColor: Colors.blueAccent,
+        selectedItemColor: const Color.fromARGB(255, 154, 223, 255),
         unselectedItemColor: const Color.fromARGB(255, 255, 253, 253),
         items: const [
           BottomNavigationBarItem(
