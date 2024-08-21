@@ -51,9 +51,11 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       
-      backgroundColor: const Color.fromARGB(255, 126, 126, 236),
+     
       body: Stack(
+        fit: StackFit.expand,
         children: [
+          Image.asset('assets/Login.jpg',fit: BoxFit.cover),
         
           Center(
             child: Form(
@@ -66,7 +68,7 @@ class _LoginPageState extends State<LoginPage> {
                   const Icon(
                     size: 80,
                     Icons.person_3_outlined,
-                    color: Color.fromARGB(255, 254, 254, 255),
+                    color: Color.fromARGB(255, 58, 58, 208),
                   ),
                   const SizedBox(
                     height: 20,
@@ -76,7 +78,7 @@ class _LoginPageState extends State<LoginPage> {
                     'Pateint Login >>',
                     style: TextStyle(
                       fontSize: 20,
-                      color: Colors.white,
+                      color:Color.fromARGB(255, 58, 58, 208),
                     ),
                   ),
 

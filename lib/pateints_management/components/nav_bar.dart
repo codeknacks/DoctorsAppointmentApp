@@ -17,7 +17,7 @@ class _NavBArState extends State<NavBAr> {
   final List<Widget> _pageWidgets = [
     HomePage(),
     PatientProfilePage(),
-    AppointmentListPage(),
+    BookedAppointmentsPage(),
   ];
 
   @override
@@ -28,7 +28,7 @@ class _NavBArState extends State<NavBAr> {
         currentIndex: _selectedIndex,
         backgroundColor: Colors.black,
         onTap: (index) => setState(() => _selectedIndex = index),
-        selectedItemColor: const Color.fromARGB(255, 154, 223, 255), 
+        selectedItemColor: Colors.blueAccent,
         unselectedItemColor: const Color.fromARGB(255, 255, 253, 253), 
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home, ), label: 'Home'),
