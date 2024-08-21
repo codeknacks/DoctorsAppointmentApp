@@ -1,4 +1,5 @@
 import 'package:doctor_appointment_app/pateints_management/components/nav_bar.dart';
+import 'package:doctor_appointment_app/pateints_management/pages/chat_page.dart';
 import 'package:doctor_appointment_app/pateints_management/pages/display_appointment.dart';
 import 'package:doctor_appointment_app/pateints_management/pages/profile_pateint.dart';
 import 'package:doctor_appointment_app/pateints_management/services/notification_service.dart';
@@ -128,12 +129,12 @@ class _DoctorDetailsPageState extends State<DoctorDetailsPage> {
   }
 
   // Method to save the input values to Firestore
- void _saveAppointment(String name, int age, String mobileNumber, DateTime date, String slot) async {
+void _saveAppointment(String name, int age, String mobileNumber, DateTime date, String slot) async {
   final DateFormat formatter = DateFormat('yyyy-MM-dd'); // Adjust format as needed
   final String formattedDate = formatter.format(date);
 
   try {
-    // Fetch the patient's data from Firestore based on the mobile number (as a string)
+    // Fetch the patient's data from Firestore based on the mobile number
     QuerySnapshot patientSnapshot = await FirebaseFirestore.instance
         .collection('patients')
         .where('mobile', isEqualTo: mobileNumber)
@@ -145,8 +146,13 @@ class _DoctorDetailsPageState extends State<DoctorDetailsPage> {
       String patientId = patientDoc['patient_id'];
       String deviceToken = patientDoc['device_token'];
 
-      // Save the appointment to Firestore
-      await FirebaseFirestore.instance.collection('appointments').add({
+      // Generate a unique appointment ID using Firestore's document ID
+      DocumentReference appointmentRef = FirebaseFirestore.instance.collection('appointments').doc();
+      String appointmentId = appointmentRef.id;
+
+      // Save the appointment to Firestore with the generated ID
+      await appointmentRef.set({
+        'appointmentId': appointmentId,  // Store the generated appointment ID
         'doctorId': widget.doctor.id,
         'patientId': patientId,
         'name': name,
@@ -158,13 +164,6 @@ class _DoctorDetailsPageState extends State<DoctorDetailsPage> {
         'patientDeviceToken': deviceToken, // Store patient's device token
       });
 
-      // Fetch the doctor's device token from Firestore
-      // DocumentSnapshot doctorSnapshot = await FirebaseFirestore.instance.collection('doctors').doc(widget.doctor.id).get();
-      // String doctorDeviceToken = doctorSnapshot['deviceToken'];
-
-      // // Send notification to the doctor
-      // await NotificationService.sendNotificationToDoctor(doctorDeviceToken, context, widget.doctor.id);
-
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -173,11 +172,11 @@ class _DoctorDetailsPageState extends State<DoctorDetailsPage> {
         ),
       );
 
-      // Navigate to the BookedAppointmentsPage
+      // Navigate to the BookedAppointmentsPage where the summary is there 
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => AppointmentListPage(),
+          builder: (context) => BookedAppointmentsPage(),
         ),
       );
     } else {
@@ -327,16 +326,7 @@ class _DoctorDetailsPageState extends State<DoctorDetailsPage> {
           ),
         ),
       ),
-       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Navigate to ProfilePage
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => PatientProfilePage()),
-          );
-        },
-        child: const Icon(Icons.person),
-      ),
+       
       
     );
   }
