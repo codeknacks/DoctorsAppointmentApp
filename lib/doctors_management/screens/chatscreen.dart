@@ -21,6 +21,7 @@ class _DoctorChatScreenState extends State<DoctorChatScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final TextEditingController _messageController = TextEditingController();
   late String doctorId;
+  String? patientImageUrl;
 
   @override
   void initState() {
@@ -28,6 +29,21 @@ class _DoctorChatScreenState extends State<DoctorChatScreen> {
     User? user = _auth.currentUser;
     if (user != null) {
       doctorId = user.uid;
+    }
+    _getPatientData();
+  }
+
+  void _getPatientData() async {
+    try {
+      DocumentSnapshot patientDoc =
+          await _firestore.collection('patients').doc(widget.patientId).get();
+      if (patientDoc.exists) {
+        setState(() {
+          patientImageUrl = patientDoc['profile_image'];
+        });
+      }
+    } catch (e) {
+      print('Error fetching patient data: $e');
     }
   }
 
@@ -44,6 +60,13 @@ class _DoctorChatScreenState extends State<DoctorChatScreen> {
         'sender': 'doctor',
         'patientName': widget.patientName,
       });
+      await _firestore
+          .collection('appointments')
+          .doc(widget.appointmentId)
+          .update({
+        'lastMessageTime': FieldValue.serverTimestamp(),
+      });
+
       _messageController.clear();
     } catch (e) {
       print('Error sending message: $e');
@@ -111,7 +134,16 @@ class _DoctorChatScreenState extends State<DoctorChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Chat with ${widget.patientName}'),
+        title: Row(
+          children: [
+            if (patientImageUrl != null)
+              CircleAvatar(
+                backgroundImage: NetworkImage(patientImageUrl!),
+              ),
+            SizedBox(width: 8.0),
+            Text(widget.patientName),
+          ],
+        ),
       ),
       body: Column(
         children: [

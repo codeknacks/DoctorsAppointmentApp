@@ -278,7 +278,89 @@ class NotificationScreen extends StatelessWidget {
       'status': isAccepted ? 'accepted' : 'rejected',
     });
 
+    if (isAccepted) {
+      await _generatePaymentReceipt(appointmentId);
+    }
+
     // Optionally, notify the patient about the decision
+  }
+
+  Future<void> _generatePaymentReceipt(String appointmentId) async {
+    try {
+      DocumentSnapshot appointmentSnapshot =
+          await _firestore.collection('appointments').doc(appointmentId).get();
+      Map<String, dynamic> appointmentData =
+          appointmentSnapshot.data() as Map<String, dynamic>;
+
+      DocumentSnapshot doctorSnapshot = await _firestore
+          .collection('doctors')
+          .doc(appointmentData['doctorId'])
+          .get();
+      Map<String, dynamic> doctorData =
+          doctorSnapshot.data() as Map<String, dynamic>;
+
+      // Extract start and end times
+      String appointmentSlot = appointmentData['appointmentSlot'];
+      List<String> times = appointmentSlot.split('-');
+      String startTimeString = times[0].trim();
+      String endTimeString = times[1].trim();
+
+      // Calculate duration in minutes
+      int startMinutes = _getMinutesFromTime(startTimeString);
+      int endMinutes = _getMinutesFromTime(endTimeString);
+
+      // If the end time was "12:00", adjust to 60 minutes
+      if (endMinutes % 60 == 0 && startMinutes > endMinutes) {
+        endMinutes += 60;
+      }
+
+      int durationInMinutes = endMinutes - startMinutes;
+
+      // Calculate the payment based on the doctor's rate
+      double ratePerHour = doctorData['ratePerHour'];
+      double durationInHours = durationInMinutes / 60.0;
+      double fee = ratePerHour * durationInHours;
+      double commission = fee * 0.05;
+      double doctorAmount = fee - commission;
+
+      // Store payment details
+      await _firestore.collection('payments').add({
+        'appointmentId': appointmentId,
+        'patientId': appointmentData['patientId'],
+        'doctorId': appointmentData['doctorId'],
+        'amount': fee,
+        'commission': commission,
+        'doctorAmount': doctorAmount,
+        'status': 'pending',
+        'createdAt': DateTime.now(),
+      });
+
+      print("Payment details stored successfully.");
+    } catch (e) {
+      print("Error generating payment receipt: $e");
+    }
+  }
+
+  int _getMinutesFromTime(String timeString) {
+    // Correcting possible issues with AM/PM spacing
+    timeString = timeString.replaceAllMapped(
+        RegExp(r'(\d+)(am|pm)', caseSensitive: false),
+        (Match m) => '${m[1]} ${m[2]?.toUpperCase()}');
+
+    // Extract hours and minutes from the time string
+    final timeParts = timeString.split(':');
+    int hours = int.parse(timeParts[0].trim());
+    int minutes = int.parse(timeParts[1].split(' ')[0].trim());
+    String period = timeString.split(' ')[1].trim().toUpperCase();
+
+    // Convert to 24-hour format if necessary
+    if (period == 'PM' && hours != 12) {
+      hours += 12;
+    } else if (period == 'AM' && hours == 12) {
+      hours = 0;
+    }
+
+    return hours * 60 + minutes;
   }
 
   Future<Map<String, dynamic>?> _getPatientData(String patientId) async {
@@ -450,6 +532,19 @@ class NotificationScreen extends StatelessWidget {
 //   Widget build(BuildContext context) {
 //     User? user = _auth.currentUser;
 
+//     if (user == null) {
+//       return Scaffold(
+//         body: Center(
+//           child: ElevatedButton(
+//             onPressed: () async {
+//               await Navigator.pushReplacementNamed(context, '/login');
+//             },
+//             child: Text("Please log in to view notifications"),
+//           ),
+//         ),
+//       );
+//     }
+
 //     return Scaffold(
 //       appBar: AppBar(
 //         title: Row(
@@ -472,7 +567,7 @@ class NotificationScreen extends StatelessWidget {
 //       body: StreamBuilder<QuerySnapshot>(
 //         stream: _firestore
 //             .collection('appointments')
-//             .where('doctorId', isEqualTo: user!.uid)
+//             .where('doctorId', isEqualTo: user.uid)
 //             .where('status', isEqualTo: 'Pending')
 //             .snapshots(),
 //         builder: (context, snapshot) {
@@ -503,88 +598,62 @@ class NotificationScreen extends StatelessWidget {
 //                     shape: RoundedRectangleBorder(
 //                       borderRadius: BorderRadius.circular(15),
 //                     ),
-//                     child: Container(
-//                       decoration: BoxDecoration(
-//                         gradient: LinearGradient(
-//                           colors: [Colors.white, Colors.blue[50]!],
-//                           begin: Alignment.topLeft,
-//                           end: Alignment.bottomRight,
+//                     child: Column(
+//                       children: [
+//                         ListTile(
+//                           contentPadding: EdgeInsets.all(16),
+//                           leading: CircleAvatar(
+//                             child: patientData != null &&
+//                                     patientData['profile_image'] != null
+//                                 ? null
+//                                 : Icon(Icons.person, color: Colors.white),
+//                             backgroundImage: patientData != null &&
+//                                     patientData['profile_image'] != null
+//                                 ? NetworkImage(patientData['profile_image'])
+//                                 : null,
+//                             backgroundColor: Colors.blueAccent,
+//                           ),
+//                           title: Text(
+//                             patientData != null
+//                                 ? patientData['name'] ?? 'Unknown'
+//                                 : 'Unknown',
+//                             style: TextStyle(fontWeight: FontWeight.bold),
+//                           ),
+//                           subtitle: Column(
+//                             crossAxisAlignment: CrossAxisAlignment.start,
+//                             children: [
+//                               Text(
+//                                   'Date: ${appointmentData['appointmentDate']}'),
+//                               Text(
+//                                   'Time: ${appointmentData['appointmentSlot']}'),
+//                             ],
+//                           ),
 //                         ),
-//                       ),
-//                       padding: const EdgeInsets.all(16.0),
-//                       child: Column(
-//                         crossAxisAlignment: CrossAxisAlignment.start,
-//                         children: [
-//                           Row(
-//                             children: [
-//                               Icon(Icons.person, color: Colors.blue),
-//                               SizedBox(width: 8),
-//                               Text(
-//                                 'Patient: ${patientData != null ? patientData['name'] ?? 'Unknown' : 'Unknown'}',
-//                                 style: TextStyle(
-//                                   fontSize: 18,
-//                                   fontWeight: FontWeight.w600,
-//                                 ),
+//                         ButtonBar(
+//                           children: [
+//                             ElevatedButton.icon(
+//                               onPressed: () =>
+//                                   _handleAppointment(appointment.id, true),
+//                               icon: Icon(Icons.check),
+//                               label: Text("Accept"),
+//                               style: ElevatedButton.styleFrom(
+//                                 foregroundColor: Colors.white,
+//                                 backgroundColor: Colors.green,
 //                               ),
-//                             ],
-//                           ),
-//                           SizedBox(height: 8),
-//                           Row(
-//                             children: [
-//                               Icon(Icons.access_time, color: Colors.blue),
-//                               SizedBox(width: 8),
-//                               Text(
-//                                 'Time: ${appointmentData['appointmentSlot']}',
-//                                 style: TextStyle(
-//                                   fontSize: 16,
-//                                   color: Colors.grey[600],
-//                                 ),
+//                             ),
+//                             ElevatedButton.icon(
+//                               onPressed: () =>
+//                                   _handleAppointment(appointment.id, false),
+//                               icon: Icon(Icons.close),
+//                               label: Text("Reject"),
+//                               style: ElevatedButton.styleFrom(
+//                                 foregroundColor: Colors.white,
+//                                 backgroundColor: Colors.red,
 //                               ),
-//                             ],
-//                           ),
-//                           SizedBox(height: 8),
-//                           Row(
-//                             children: [
-//                               Icon(Icons.calendar_today, color: Colors.blue),
-//                               SizedBox(width: 8),
-//                               Text(
-//                                 'Date: ${appointmentData['appointmentDate']}',
-//                                 style: TextStyle(
-//                                   fontSize: 16,
-//                                   color: Colors.grey[600],
-//                                 ),
-//                               ),
-//                             ],
-//                           ),
-//                           SizedBox(height: 16),
-//                           Row(
-//                             mainAxisAlignment: MainAxisAlignment.end,
-//                             children: [
-//                               ElevatedButton.icon(
-//                                 onPressed: () =>
-//                                     _handleAppointment(appointment.id, true),
-//                                 icon: const Icon(Icons.check),
-//                                 label: const Text("Accept"),
-//                                 style: ElevatedButton.styleFrom(
-//                                   foregroundColor: Colors.white,
-//                                   backgroundColor: Colors.green,
-//                                 ),
-//                               ),
-//                               SizedBox(width: 8),
-//                               ElevatedButton.icon(
-//                                 onPressed: () =>
-//                                     _handleAppointment(appointment.id, false),
-//                                 icon: Icon(Icons.close),
-//                                 label: Text("Reject"),
-//                                 style: ElevatedButton.styleFrom(
-//                                   foregroundColor: Colors.white,
-//                                   backgroundColor: Colors.red,
-//                                 ),
-//                               ),
-//                             ],
-//                           ),
-//                         ],
-//                       ),
+//                             ),
+//                           ],
+//                         ),
+//                       ],
 //                     ),
 //                   );
 //                 },
@@ -596,3 +665,5 @@ class NotificationScreen extends StatelessWidget {
 //     );
 //   }
 // }
+
+ 
