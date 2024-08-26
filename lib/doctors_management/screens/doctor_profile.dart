@@ -57,6 +57,7 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
   bool _isLoading = false;
   bool _isProfileExists = false;
   String? _docId;
+  int _reviewCount = 0;
 
   final List<String> _daysOfWeek = [
     'Monday',
@@ -72,6 +73,21 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
   void initState() {
     super.initState();
     _fetchProfile();
+    _fetchReviews();
+  }
+
+  Future<void> _fetchReviews() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      QuerySnapshot reviewSnapshot = await FirebaseFirestore.instance
+          .collection('reviews')
+          .where('doctorId', isEqualTo: user.uid)
+          .get();
+
+      setState(() {
+        _reviewCount = reviewSnapshot.size;
+      });
+    }
   }
 
   Future<void> _fetchProfile() async {
@@ -342,6 +358,45 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
                           ? 'Please select unavailable days'
                           : null,
                     ),
+                    // Add this under the Save Profile button or wherever suitable in the layout
+                    SizedBox(height: 16),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                DoctorReviewsScreen(doctorId: doctorId),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        padding: EdgeInsets.all(16.0),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          borderRadius: BorderRadius.circular(8.0),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Reviews',
+                              style: TextStyle(
+                                color: Colors.blueGrey[800],
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              '$_reviewCount Review${_reviewCount > 1 ? 's' : ''}',
+                              style: TextStyle(
+                                color: Colors.blueAccent,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
                     SizedBox(height: 32),
                     Container(
                       decoration: BoxDecoration(
@@ -376,4 +431,112 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
       ),
     );
   }
+}
+
+class DoctorReviewsScreen extends StatefulWidget {
+  final String doctorId;
+
+  DoctorReviewsScreen({required this.doctorId});
+
+  @override
+  _DoctorReviewsScreenState createState() => _DoctorReviewsScreenState();
+}
+
+class _DoctorReviewsScreenState extends State<DoctorReviewsScreen> {
+  List<Review> _reviews = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchReviews();
+  }
+
+  Future<void> _fetchReviews() async {
+    QuerySnapshot reviewSnapshot = await FirebaseFirestore.instance
+        .collection('reviews')
+        .where('doctorId', isEqualTo: widget.doctorId)
+        .get();
+
+    List<Review> reviews =
+        await Future.wait(reviewSnapshot.docs.map((doc) async {
+      double rating =
+          (doc['rating'] as num).toDouble(); // Ensure rating is a double
+      String description = doc['description'];
+      String patientId = doc['patientId'];
+
+      // Fetch patient name from 'appointments' collection based on patientId
+      DocumentSnapshot patientSnapshot = await FirebaseFirestore.instance
+          .collection('patients')
+          .doc(patientId)
+          .get();
+
+      String patientName = patientSnapshot['name'] ?? 'Unknown Patient';
+
+      return Review(
+        patientName: patientName,
+        rating: rating,
+        description: description,
+      );
+    }).toList());
+
+    setState(() {
+      _reviews = reviews;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Doctor Reviews'),
+      ),
+      body: _reviews.isEmpty
+          ? Center(child: CircularProgressIndicator())
+          : ListView.builder(
+              itemCount: _reviews.length,
+              itemBuilder: (context, index) {
+                Review review = _reviews[index];
+                int roundedRating =
+                    review.rating.round(); // Round the rating to an integer
+
+                return Card(
+                  margin: EdgeInsets.all(8.0),
+                  child: Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          review.patientName,
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 18.0),
+                        ),
+                        SizedBox(height: 8.0),
+                        Row(
+                          children: List.generate(roundedRating, (index) {
+                            return Icon(Icons.star, color: Colors.amber);
+                          }),
+                        ),
+                        SizedBox(height: 8.0),
+                        Text(review.description),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+    );
+  }
+}
+
+class Review {
+  final String patientName;
+  final double rating;
+  final String description;
+
+  Review({
+    required this.patientName,
+    required this.rating,
+    required this.description,
+  });
 }
