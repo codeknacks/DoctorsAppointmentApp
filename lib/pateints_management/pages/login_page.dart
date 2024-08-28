@@ -143,16 +143,16 @@ class _LoginPageState extends State<LoginPage> {
                 height: 55,
                 width: double.infinity,
                 child: ElevatedButton(
-                    onPressed: () async {
-                      if (_formKey.currentState!.validate()) {
-                        _formKey.currentState!.save();
-                        login
-                            ? AuthService.signinUser(email, password, context)
-                            : AuthService.signupUser(
-                                email, password, fullname, context);
-                      }
-                    },
-                    child: Text(login ? 'Login' : 'Signup')),
+  onPressed: () async {
+    if (_formKey.currentState!.validate()) {
+      _formKey.currentState!.save();
+      login
+          ? await AuthService.signinUser(email, password, context)
+          : await AuthService.signupUser(email, password, fullname, context);
+    }
+  },
+  child: Text(login ? 'Login' : 'Signup'),
+),
               ),
               const SizedBox(
                 height: 10,

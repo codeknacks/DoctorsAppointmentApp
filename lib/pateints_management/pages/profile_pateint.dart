@@ -1,11 +1,11 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
+import 'package:doctor_appointment_app/pateints_management/services/pateint_provider.dart';
 
 class PatientProfilePage extends StatefulWidget {
   @override
@@ -20,60 +20,50 @@ class _PatientProfilePageState extends State<PatientProfilePage> {
   String? _profileImageUrl;
   XFile? _image;
   bool _isEditing = false;
-  String? _patientId;
 
   @override
   void initState() {
     super.initState();
-    _loadPatientId();
-  }
-
-  Future<void> _loadPatientId() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    _patientId = prefs.getString('patient_id');
-
-    if (_patientId != null) {
-      await _loadPatientData();
-    } else {
-      setState(() {
-        _isEditing = true; // Allow editing if no data is found
-      });
-    }
+    _loadPatientData();
   }
 
   Future<void> _loadPatientData() async {
-    if (_patientId == null) return;
+    final userProvider = Provider.of<PateintProvider>(context, listen: false);
+    final String? patientId = userProvider.userId;
 
-    final DocumentSnapshot doc = await FirebaseFirestore.instance
-        .collection('patients')
-        .doc(_patientId)
-        .get();
+    if (patientId != null) {
+      final DocumentSnapshot doc = await FirebaseFirestore.instance
+          .collection('patients')
+          .doc(patientId)
+          .get();
 
-    if (doc.exists) {
-      final data = doc.data() as Map<String, dynamic>;
+      if (doc.exists) {
+        final data = doc.data() as Map<String, dynamic>;
 
-      _nameController.text = data['name'] ?? '';
-      _ageController.text = data['age']?.toString() ?? '';
-      _mobileController.text = data['mobile'] ?? '';
-      _addressController.text = data['address'] ?? '';
-      _profileImageUrl = data['profile_image'];
+        _nameController.text = data['name'] ?? '';
+        _ageController.text = data['age']?.toString() ?? '';
+        _mobileController.text = data['mobile'] ?? '';
+        _addressController.text = data['address'] ?? '';
+        _profileImageUrl = data['profile_image'];
 
-      setState(() {
-        _isEditing = false; // Switch to view mode since data exists
-      });
-    } else {
-      setState(() {
-        _isEditing = true; // Allow editing if no data is found
-      });
+        setState(() {
+          _isEditing = false;
+        });
+      } else {
+        setState(() {
+          _isEditing = true;
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(_isEditing ? 'Add Details' : 'Patient Profile'),
-      automaticallyImplyLeading: false,
-      centerTitle: true,
+      appBar: AppBar(
+        title: Text(_isEditing ? 'Add Details' : 'Patient Profile'),
+        automaticallyImplyLeading: false,
+        centerTitle: true,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -123,91 +113,91 @@ class _PatientProfilePageState extends State<PatientProfilePage> {
   }
 
   Widget _buildProfileView() {
-  return Center(
-    child: Card(
-      elevation: 4.0, // Controls the shadow depth of the card
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16.0), // Rounds the corners of the card
-      ),
-      margin: const EdgeInsets.all(16.0), // Space around the card
-      child: Padding(
-        padding: const EdgeInsets.all(16.0), // Space inside the card
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: CircleAvatar(
-                radius: 50.0, // Adjust the radius as needed
-                backgroundImage: _profileImageUrl != null
-                    ? NetworkImage(_profileImageUrl!)
-                    : null,
-                backgroundColor: Colors.grey[200], // Fallback background color
-                child: _profileImageUrl == null
-                    ? Icon(Icons.person, size: 50.0, color: Colors.grey[400])
-                    : null, // Placeholder icon if no image is available
+    return Center(
+      child: Card(
+        elevation: 4.0, // Controls the shadow depth of the card
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16.0), // Rounds the corners of the card
+        ),
+        margin: const EdgeInsets.all(16.0), // Space around the card
+        child: Padding(
+          padding: const EdgeInsets.all(16.0), // Space inside the card
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: CircleAvatar(
+                  radius: 50.0, // Adjust the radius as needed
+                  backgroundImage: _profileImageUrl != null
+                      ? NetworkImage(_profileImageUrl!)
+                      : null,
+                  backgroundColor: Colors.grey[200], // Fallback background color
+                  child: _profileImageUrl == null
+                      ? Icon(Icons.person, size: 50.0, color: Colors.grey[400])
+                      : null, // Placeholder icon if no image is available
+                ),
               ),
-            ),
-            SizedBox(height: 16),
-            Text(
-              'Name: ${_nameController.text}',
-              style: TextStyle(
-                fontSize: 18.0,
-                fontWeight: FontWeight.bold,
+              SizedBox(height: 16),
+              Text(
+                'Name: ${_nameController.text}',
+                style: TextStyle(
+                  fontSize: 18.0,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-            SizedBox(height: 8),
-            Text(
-              'Age: ${_ageController.text}',
-              style: TextStyle(
-                fontSize: 16.0,
+              SizedBox(height: 8),
+              Text(
+                'Age: ${_ageController.text}',
+                style: TextStyle(
+                  fontSize: 16.0,
+                ),
               ),
-            ),
-            SizedBox(height: 8),
-            Text(
-              'Mobile: ${_mobileController.text}',
-              style: TextStyle(
-                fontSize: 16.0,
+              SizedBox(height: 8),
+              Text(
+                'Mobile: ${_mobileController.text}',
+                style: TextStyle(
+                  fontSize: 16.0,
+                ),
               ),
-            ),
-            SizedBox(height: 8),
-            Text(
-              'Address: ${_addressController.text}',
-              style: TextStyle(
-                fontSize: 16.0,
+              SizedBox(height: 8),
+              Text(
+                'Address: ${_addressController.text}',
+                style: TextStyle(
+                  fontSize: 16.0,
+                ),
               ),
-            ),
-            SizedBox(height: 200),
-           Center(
-  child: ElevatedButton(
-    onPressed: () {
-      setState(() {
-        _isEditing = true;
-      });
-    },
-    style: ElevatedButton.styleFrom(
-      backgroundColor: Colors.blue, // Button background color
-      textStyle: TextStyle(color: Colors.white), // Button text color
-      padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0), // Button padding
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(30.0), // Rounded corners
-      ),
-      elevation: 5.0, // Shadow elevation
-    ),
-    child: Text(
-      'Edit Details',
-      style: TextStyle(
-        fontSize: 16.0, // Text size
-        fontWeight: FontWeight.bold, // Text weight
-      ),
-    ),
-  ),)
-          ]
+              SizedBox(height: 200),
+              Center(
+                child: ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      _isEditing = true;
+                    });
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue, // Button background color
+                    textStyle: TextStyle(color: Colors.white), // Button text color
+                    padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0), // Button padding
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30.0), // Rounded corners
+                    ),
+                    elevation: 5.0, // Shadow elevation
+                  ),
+                  child: Text(
+                    'Edit Details',
+                    style: TextStyle(
+                      fontSize: 16.0, // Text size
+                      fontWeight: FontWeight.bold, // Text weight
+                    ),
+                  ),
+                ),
+              )
+            ],
+          ),
         ),
       ),
-    ),
-  );
-}
-
+    );
+  }
 
   Future<void> _pickImage() async {
     final ImagePicker picker = ImagePicker();
@@ -219,38 +209,41 @@ class _PatientProfilePageState extends State<PatientProfilePage> {
   }
 
   Future<void> _savePatientData() async {
-    if (_image == null || _nameController.text.isEmpty || _ageController.text.isEmpty || 
-        _mobileController.text.isEmpty || _addressController.text.isEmpty) {
+    if (_image == null ||
+        _nameController.text.isEmpty ||
+        _ageController.text.isEmpty ||
+        _mobileController.text.isEmpty ||
+        _addressController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Please fill all fields')));
       return;
     }
 
-    final String? deviceToken = await FirebaseMessaging.instance.getToken();
-    if (_patientId == null) {
-      _patientId = FirebaseFirestore.instance.collection('patients').doc().id;
+    final userProvider = Provider.of<PateintProvider>(context, listen: false);
+    final String? patientId = userProvider.userId;
+    final String? deviceToken = userProvider.deviceToken ?? await FirebaseMessaging.instance.getToken();
+
+    if (patientId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Patient ID is not available')));
+      return;
     }
 
     try {
       // Upload Image to Firebase Storage
-      final storageRef = FirebaseStorage.instance.ref().child('profile_images/$_patientId.jpg');
+      final storageRef = FirebaseStorage.instance.ref().child('profile_images/$patientId.jpg');
       await storageRef.putFile(File(_image!.path));
       _profileImageUrl = await storageRef.getDownloadURL();
 
       // Save Patient Data to Firestore
-      await FirebaseFirestore.instance.collection('patients').doc(_patientId).set({
+      await FirebaseFirestore.instance.collection('patients').doc(patientId).set({
         'name': _nameController.text,
         'age': int.parse(_ageController.text),
         'mobile': _mobileController.text,
         'address': _addressController.text,
         'profile_image': _profileImageUrl,
         'device_token': deviceToken,
-        'patient_id': _patientId,
+        'patient_id': patientId,
         'created_at': FieldValue.serverTimestamp(),
       });
-
-      // Save patient ID to SharedPreferences
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.setString('patient_id', _patientId!);
 
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Patient added successfully')));
 

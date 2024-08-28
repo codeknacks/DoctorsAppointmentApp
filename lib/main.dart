@@ -4,6 +4,7 @@ import 'package:doctor_appointment_app/doctors_management/screens/doctors_availa
 import 'package:doctor_appointment_app/firebase_options.dart';
 import 'package:doctor_appointment_app/pateints_management/components/nav_bar.dart';
 import 'package:doctor_appointment_app/pateints_management/pages/homepage.dart';
+import 'package:doctor_appointment_app/pateints_management/services/pateint_provider.dart';
 import 'package:doctor_appointment_app/selection_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -46,6 +47,7 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => UserProvider()),
+         ChangeNotifierProvider(create: (_) => PateintProvider()),
         // Add other providers here if needed
       ],
       child: MaterialApp(
