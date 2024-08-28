@@ -126,6 +126,7 @@ class _DoctorDetailsPageState extends State<DoctorDetailsPage> {
 
   // Method to save the input values to Firestore
   void _saveAppointment(String name, int age, String mobileNumber,
+  
     DateTime date, String slot) async {
   final DateFormat formatter =
       DateFormat('yyyy-MM-dd'); // Adjust format as needed
@@ -183,6 +184,7 @@ class _DoctorDetailsPageState extends State<DoctorDetailsPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Patient not found'),
+ 
           backgroundColor: Colors.red,
         ),
       );

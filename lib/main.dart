@@ -1,4 +1,5 @@
 import 'package:doctor_appointment_app/doctors_management/provider/userprovider.dart';
+import 'package:doctor_appointment_app/doctors_management/screens/doctor_home_screen.dart';
 import 'package:doctor_appointment_app/doctors_management/screens/doctors_availability.dart';
 import 'package:doctor_appointment_app/firebase_options.dart';
 import 'package:doctor_appointment_app/pateints_management/components/nav_bar.dart';
@@ -102,6 +103,6 @@ class _InitialScreenState extends State<InitialScreen> {
       );
     }
 
-    return _isLoggedIn ? DoctorAvailabilityScreen() : UserSelectionScreen();
+    return _isLoggedIn ? DoctorHomeScreen() : UserSelectionScreen();
   }
 }
