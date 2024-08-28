@@ -21,8 +21,6 @@ class _DoctorDetailsPageState extends State<DoctorDetailsPage> {
   String? selectedSlot;
   DateTime? selectedDate;
 
-  //nav baar
-
   // Method to show the dialog box and handle input
   Future<void> _showInputDialog() async {
     final nameController = TextEditingController();
@@ -128,77 +126,78 @@ class _DoctorDetailsPageState extends State<DoctorDetailsPage> {
 
   // Method to save the input values to Firestore
   void _saveAppointment(String name, int age, String mobileNumber,
-      DateTime date, String slot) async {
-    final DateFormat formatter =
-        DateFormat('yyyy-MM-dd'); // Adjust format as needed
-    final String formattedDate = formatter.format(date);
+  
+    DateTime date, String slot) async {
+  final DateFormat formatter =
+      DateFormat('yyyy-MM-dd'); // Adjust format as needed
+  final String formattedDate = formatter.format(date);
 
-    try {
-      // Fetch the patient's data from Firestore based on the mobile number
-      QuerySnapshot patientSnapshot = await FirebaseFirestore.instance
-          .collection('patients')
-          .where('mobile', isEqualTo: mobileNumber)
-          .limit(1)
-          .get();
+  try {
+    // Fetch the patient's data from Firestore based on the mobile number
+    QuerySnapshot patientSnapshot = await FirebaseFirestore.instance
+        .collection('patients')
+        .where('mobile', isEqualTo: mobileNumber)
+        .limit(1)
+        .get();
 
-      if (patientSnapshot.docs.isNotEmpty) {
-        DocumentSnapshot patientDoc = patientSnapshot.docs.first;
-        String patientId = patientDoc['patient_id'];
-        String deviceToken = patientDoc['device_token'];
+    if (patientSnapshot.docs.isNotEmpty) {
+      DocumentSnapshot patientDoc = patientSnapshot.docs.first;
+      String patientId = patientDoc['patient_id'];
+      String deviceToken = patientDoc['device_token'];
 
-        // Generate a unique appointment ID using Firestore's document ID
-        DocumentReference appointmentRef =
-            FirebaseFirestore.instance.collection('appointments').doc();
-        String appointmentId = appointmentRef.id;
+      // Generate a unique appointment ID using Firestore's document ID
+      DocumentReference appointmentRef =
+          FirebaseFirestore.instance.collection('appointments').doc();
+      String appointmentId = appointmentRef.id;
 
-        // Save the appointment to Firestore with the generated ID
-        await appointmentRef.set({
-          'appointmentId': appointmentId, // Store the generated appointment ID
-          'doctorId': widget.doctor.id,
-          'patientId': patientId,
-          'name': name,
-          'age': age,
-          'mobileNumber': mobileNumber,
-          'appointmentDate': formattedDate,
-          'appointmentSlot': slot,
-          'status': 'Pending', // Initial status
-          'patientDeviceToken': deviceToken, // Store patient's device token
-        });
+      // Save the appointment to Firestore with the generated ID
+      await appointmentRef.set({
+        'appointmentId': appointmentId, // Store the generated appointment ID
+        'doctorId': widget.doctor.id,
+        'patientId': patientId,
+        'name': name,
+        'age': age,
+        'mobileNumber': mobileNumber,
+        'appointmentDate': formattedDate,
+        'appointmentSlot': slot,
+        'status': 'Pending', // Initial status
+        'patientDeviceToken': deviceToken, // Store patient's device token
+      });
 
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Request submitted'),
-            backgroundColor: Colors.green,
-          ),
-        );
-
-        // Navigate to the BookedAppointmentsPage where the summary is there
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => BookedAppointmentsPage(),
-          ),
-        );
-      } else {
-        // Show error message if patient not found
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Patient not found'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } catch (e) {
-      // Show error message in case of failure
+      // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to submit request: $e'),
+        const SnackBar(
+          content: Text('Request submitted'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      // Navigate to the BookedAppointmentsPage where the summary is there
+      // Navigator.push(
+      //   context,
+      //   MaterialPageRoute(
+      //     builder: (context) => BookedAppointmentsPage(), // Pass the patientId here
+      //   ),
+      // );
+    } else {
+      // Show error message if patient not found
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Patient not found'),
+ 
           backgroundColor: Colors.red,
         ),
       );
     }
+  } catch (e) {
+    // Show error message in case of failure
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Failed to submit request: $e'),
+      ));
   }
+}
+
 
   @override
   Widget build(BuildContext context) {

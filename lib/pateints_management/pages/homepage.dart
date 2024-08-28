@@ -1,6 +1,7 @@
-import 'package:doctor_appointment_app/pateints_management/pages/chat_page.dart';
+
 import 'package:doctor_appointment_app/pateints_management/pages/doctor_detail_page.dart';
 import 'package:doctor_appointment_app/pateints_management/pages/login_page.dart';
+import 'package:doctor_appointment_app/pateints_management/pages/notification_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -19,14 +20,13 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    fetchSpecializations(); // Fetch specializations when the widget is initialized
+    fetchSpecializations();
   }
 
   void fetchSpecializations() async {
     final result = await FirebaseFirestore.instance.collection('doctors').get();
     final uniqueSpecializations = result.docs
-        .where((doc) => doc.data().containsKey(
-            'specialization')) // Check if the specialization field exists
+        .where((doc) => doc.data().containsKey('specialization'))
         .map((doc) => doc['specialization'] as String)
         .toSet()
         .toList();
@@ -53,6 +53,26 @@ class _HomePageState extends State<HomePage> {
       searchQuery = query;
       doctors = querySnapshot.docs;
     });
+  }
+
+  void navigateToNotificationScreen() async {
+    // Assuming you want to fetch the patientId from the chats collection
+    final chatSnapshot = await FirebaseFirestore.instance
+        .collection('chats')
+        .where('sender', isEqualTo: 'doctor')
+        .get();
+
+    if (chatSnapshot.docs.isNotEmpty) {
+      final patientId = chatSnapshot.docs.first['patientId'];
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => NotificationsScreen(patientId: patientId)
+        ),
+      );
+    } else {
+      // Handle the case where no chat is found
+      print('No chats found');
+    }
   }
 
   @override
@@ -94,11 +114,10 @@ class _HomePageState extends State<HomePage> {
           Padding(
             padding: const EdgeInsets.only(left: 8.0, right: 8.0),
             child: Row(
-              mainAxisAlignment:
-                  MainAxisAlignment.end, // Aligns the dropdown to the end
+              mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                Icon(Icons.graphic_eq), // Adds the filter icon
-                SizedBox(width: 8), // Space between the icon and the dropdown
+                Icon(Icons.graphic_eq),
+                SizedBox(width: 8),
                 DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
                     value: selectedSpecialization.isEmpty
@@ -149,6 +168,10 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        child: Icon(Icons.notifications),
+        onPressed: navigateToNotificationScreen,
       ),
     );
   }
