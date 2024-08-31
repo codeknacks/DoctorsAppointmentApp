@@ -139,7 +139,6 @@ class _DoctorAvailabilityScreenState extends State<DoctorAvailabilityScreen> {
             ),
           ),
         ),
-        // backgroundColor: Colors.blueGrey[900],
       ),
       body: isLoading
           ? Center(child: CircularProgressIndicator())
@@ -214,12 +213,10 @@ class _DoctorAvailabilityScreenState extends State<DoctorAvailabilityScreen> {
                     child: ElevatedButton(
                       onPressed: _saveSlots,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors
-                            .transparent, // Make the button's background color transparent
+                        backgroundColor: Colors.transparent,
                         padding: EdgeInsets.symmetric(
                             horizontal: 32.0, vertical: 12.0),
-                        elevation:
-                            0, // Remove the button's shadow to show the gradient properly
+                        elevation: 0,
                       ),
                       child: Text(
                         'Save Slots',

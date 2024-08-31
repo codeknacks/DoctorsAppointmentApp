@@ -194,16 +194,13 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
 
   Future<void> _logout() async {
     try {
-      await FirebaseAuth.instance.signOut(); // Sign out from Firebase
+      await FirebaseAuth.instance.signOut();
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-            builder: (context) =>
-                UserSelectionScreen()), // Redirect to login screen
+        MaterialPageRoute(builder: (context) => UserSelectionScreen()),
       );
     } catch (e) {
       print('Error logging out: $e');
-      // You can show an error message to the user if needed
     }
   }
 
@@ -228,7 +225,7 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
           actions: [
             IconButton(
               icon: Icon(Icons.logout),
-              onPressed: _logout, // Call the logout method on press
+              onPressed: _logout,
             ),
           ]),
       body: _isLoading
@@ -358,7 +355,6 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
                           ? 'Please select unavailable days'
                           : null,
                     ),
-                    // Add this under the Save Profile button or wherever suitable in the layout
                     SizedBox(height: 16),
                     GestureDetector(
                       onTap: () {
@@ -396,7 +392,6 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
                         ),
                       ),
                     ),
-
                     SizedBox(height: 32),
                     Container(
                       decoration: BoxDecoration(
@@ -410,10 +405,8 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
                       child: ElevatedButton(
                         onPressed: _saveProfile,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors
-                              .transparent, // Make the button's background color transparent
-                          elevation:
-                              0, // Remove the button's shadow to show the gradient properly
+                          backgroundColor: Colors.transparent,
+                          elevation: 0,
                         ),
                         child: Text(
                           'Save Profile',
@@ -459,12 +452,10 @@ class _DoctorReviewsScreenState extends State<DoctorReviewsScreen> {
 
     List<Review> reviews =
         await Future.wait(reviewSnapshot.docs.map((doc) async {
-      double rating =
-          (doc['rating'] as num).toDouble(); // Ensure rating is a double
+      double rating = (doc['rating'] as num).toDouble();
       String description = doc['description'];
       String patientId = doc['patientId'];
 
-      // Fetch patient name from 'appointments' collection based on patientId
       DocumentSnapshot patientSnapshot = await FirebaseFirestore.instance
           .collection('patients')
           .doc(patientId)
@@ -496,8 +487,7 @@ class _DoctorReviewsScreenState extends State<DoctorReviewsScreen> {
               itemCount: _reviews.length,
               itemBuilder: (context, index) {
                 Review review = _reviews[index];
-                int roundedRating =
-                    review.rating.round(); // Round the rating to an integer
+                int roundedRating = review.rating.round();
 
                 return Card(
                   margin: EdgeInsets.all(8.0),

@@ -4,8 +4,7 @@ class DoctorProfile {
   String specialization;
   String clinicAddress;
   double ratePerHour;
-  Map<String, bool>
-      availability; // e.g., {'Monday': true, 'Tuesday': false, ...}
+  Map<String, bool> availability;
 
   DoctorProfile({
     required this.profilePicUrl,

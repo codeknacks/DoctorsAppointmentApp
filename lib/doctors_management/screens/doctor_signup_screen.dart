@@ -4,7 +4,6 @@ import 'package:doctor_appointment_app/doctors_management/provider/userprovider.
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
-// Ensure this import is correct for your project structure
 
 class DoctorSignUpScreen extends StatefulWidget {
   @override
@@ -48,7 +47,6 @@ class _DoctorSignUpScreenState extends State<DoctorSignUpScreen> {
         setState(() {
           _isLoading = false;
         });
-        // Handle error
       }
     }
   }

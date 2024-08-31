@@ -12,9 +12,9 @@ class DoctorNavigationBar extends StatelessWidget {
       backgroundColor: Colors.black,
       currentIndex: currentIndex,
       onTap: onTap,
-      selectedItemColor: Colors.blueAccent, // Highlighted active icon color
-      unselectedItemColor: Colors.grey, // Color for inactive icons
-      showUnselectedLabels: true, // Show labels for all icons
+      selectedItemColor: Colors.blueAccent,
+      unselectedItemColor: Colors.grey,
+      showUnselectedLabels: true,
       items: [
         BottomNavigationBarItem(
           backgroundColor: Colors.black,
