@@ -1,11 +1,12 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:doctor_appointment_app/pateints_management/services/pateint_provider.dart';
+import 'package:flutter/scheduler.dart';
 
 class PatientProfilePage extends StatefulWidget {
   @override
@@ -22,8 +23,8 @@ class _PatientProfilePageState extends State<PatientProfilePage> {
   bool _isEditing = false;
 
   @override
-  void initState() {
-    super.initState();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
     _loadPatientData();
   }
 
@@ -31,7 +32,7 @@ class _PatientProfilePageState extends State<PatientProfilePage> {
     final userProvider = Provider.of<PateintProvider>(context, listen: false);
     final String? patientId = userProvider.userId;
 
-    if (patientId != null) {
+    if (patientId != null && patientId.isNotEmpty) {
       final DocumentSnapshot doc = await FirebaseFirestore.instance
           .collection('patients')
           .doc(patientId)
@@ -40,13 +41,12 @@ class _PatientProfilePageState extends State<PatientProfilePage> {
       if (doc.exists) {
         final data = doc.data() as Map<String, dynamic>;
 
-        _nameController.text = data['name'] ?? '';
-        _ageController.text = data['age']?.toString() ?? '';
-        _mobileController.text = data['mobile'] ?? '';
-        _addressController.text = data['address'] ?? '';
-        _profileImageUrl = data['profile_image'];
-
         setState(() {
+          _nameController.text = data['fullname'] ?? '';
+          _ageController.text = data['age']?.toString() ?? '';
+          _mobileController.text = data['mobile'] ?? '';
+          _addressController.text = data['address'] ?? '';
+          _profileImageUrl = data['profile_image'];
           _isEditing = false;
         });
       } else {
@@ -54,6 +54,16 @@ class _PatientProfilePageState extends State<PatientProfilePage> {
           _isEditing = true;
         });
       }
+    } else {
+      setState(() {
+        _isEditing = true;
+      });
+      // Delay the SnackBar display until after the current frame
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Patient ID is not available or is empty')),
+        );
+      });
     }
   }
 
@@ -61,7 +71,7 @@ class _PatientProfilePageState extends State<PatientProfilePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isEditing ? 'Add Details' : 'Patient Profile'),
+        title: Text(_isEditing ? 'Edit Profile' : 'Patient Profile'),
         automaticallyImplyLeading: false,
         centerTitle: true,
       ),
@@ -105,7 +115,7 @@ class _PatientProfilePageState extends State<PatientProfilePage> {
           SizedBox(height: 16),
           ElevatedButton(
             onPressed: _savePatientData,
-            child: Text('Save Patient'),
+            child: Text('Save Changes'),
           ),
         ],
       ),
@@ -115,26 +125,26 @@ class _PatientProfilePageState extends State<PatientProfilePage> {
   Widget _buildProfileView() {
     return Center(
       child: Card(
-        elevation: 4.0, // Controls the shadow depth of the card
+        elevation: 4.0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16.0), // Rounds the corners of the card
+          borderRadius: BorderRadius.circular(16.0),
         ),
-        margin: const EdgeInsets.all(16.0), // Space around the card
+        margin: const EdgeInsets.all(16.0),
         child: Padding(
-          padding: const EdgeInsets.all(16.0), // Space inside the card
+          padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Center(
                 child: CircleAvatar(
-                  radius: 50.0, // Adjust the radius as needed
+                  radius: 50.0,
                   backgroundImage: _profileImageUrl != null
                       ? NetworkImage(_profileImageUrl!)
                       : null,
-                  backgroundColor: Colors.grey[200], // Fallback background color
+                  backgroundColor: Colors.grey[200],
                   child: _profileImageUrl == null
                       ? Icon(Icons.person, size: 50.0, color: Colors.grey[400])
-                      : null, // Placeholder icon if no image is available
+                      : null,
                 ),
               ),
               SizedBox(height: 16),
@@ -175,23 +185,23 @@ class _PatientProfilePageState extends State<PatientProfilePage> {
                     });
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue, // Button background color
-                    textStyle: TextStyle(color: Colors.white), // Button text color
-                    padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0), // Button padding
+                    backgroundColor: Colors.blue,
+                    textStyle: TextStyle(color: Colors.white),
+                    padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30.0), // Rounded corners
+                      borderRadius: BorderRadius.circular(30.0),
                     ),
-                    elevation: 5.0, // Shadow elevation
+                    elevation: 5.0,
                   ),
                   child: Text(
                     'Edit Details',
                     style: TextStyle(
-                      fontSize: 16.0, // Text size
-                      fontWeight: FontWeight.bold, // Text weight
+                      fontSize: 16.0,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
-              )
+              ),
             ],
           ),
         ),
@@ -209,49 +219,55 @@ class _PatientProfilePageState extends State<PatientProfilePage> {
   }
 
   Future<void> _savePatientData() async {
-    if (_image == null ||
-        _nameController.text.isEmpty ||
+    if (_nameController.text.isEmpty ||
         _ageController.text.isEmpty ||
         _mobileController.text.isEmpty ||
         _addressController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Please fill all fields')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Please fill all required fields')));
       return;
     }
 
     final userProvider = Provider.of<PateintProvider>(context, listen: false);
     final String? patientId = userProvider.userId;
-    final String? deviceToken = userProvider.deviceToken ?? await FirebaseMessaging.instance.getToken();
 
-    if (patientId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Patient ID is not available')));
+    if (patientId == null || patientId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Patient ID is not available')));
       return;
     }
 
     try {
       // Upload Image to Firebase Storage
-      final storageRef = FirebaseStorage.instance.ref().child('profile_images/$patientId.jpg');
-      await storageRef.putFile(File(_image!.path));
-      _profileImageUrl = await storageRef.getDownloadURL();
+      if (_image != null) {
+        final storageRef = FirebaseStorage.instance
+            .ref()
+            .child('profile_images/$patientId.jpg');
+        await storageRef.putFile(File(_image!.path));
+        _profileImageUrl = await storageRef.getDownloadURL();
+      }
 
       // Save Patient Data to Firestore
-      await FirebaseFirestore.instance.collection('patients').doc(patientId).set({
-        'name': _nameController.text,
+      await FirebaseFirestore.instance
+          .collection('patients')
+          .doc(patientId)
+          .update({
+        'fullname': _nameController.text,
         'age': int.parse(_ageController.text),
         'mobile': _mobileController.text,
         'address': _addressController.text,
-        'profile_image': _profileImageUrl,
-        'device_token': deviceToken,
-        'patient_id': patientId,
-        'created_at': FieldValue.serverTimestamp(),
+        'profile_image': _profileImageUrl ?? '', // Use empty string if no image is uploaded
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Patient added successfully')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Profile updated successfully')));
 
       setState(() {
         _isEditing = false;
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to add patient: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update profile: $e')));
     }
   }
 }

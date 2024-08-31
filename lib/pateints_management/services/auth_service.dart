@@ -13,13 +13,13 @@ class AuthService {
 
   Future<void> signInWithGoogle(BuildContext context) async {
     try {
-      final GoogleSignInAccount? gUser = await GoogleSignIn().signIn();
-      if (gUser == null) return;
+      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+      if (googleUser == null) return;
 
-      final GoogleSignInAuthentication gAuth = await gUser.authentication;
-      final credential = GoogleAuthProvider.credential(
-        accessToken: gAuth.accessToken,
-        idToken: gAuth.idToken,
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final AuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
       );
 
       UserCredential userCredential = await _auth.signInWithCredential(credential);
@@ -28,6 +28,7 @@ class AuthService {
       if (user != null) {
         DocumentSnapshot patientDoc = await _firestore.collection('patients').doc(user.uid).get();
         String deviceToken;
+
         if (!patientDoc.exists) {
           deviceToken = await _firebaseMessaging.getToken() ?? '';
           await _firestore.collection('patients').doc(user.uid).set({
@@ -40,7 +41,6 @@ class AuthService {
           deviceToken = patientDoc['deviceToken'];
         }
 
-        // Store in global state
         Provider.of<PateintProvider>(context, listen: false).setUserDetails(
           userId: user.uid,
           deviceToken: deviceToken,
@@ -51,12 +51,19 @@ class AuthService {
     } catch (e) {
       print('Error: $e');
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('An error occurred: ${e.toString()}')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('An error occurred: ${e.toString()}')),
+        );
       }
     }
   }
 
-  static Future<void> signupUser(String email, String password, String name, BuildContext context) async {
+  static Future<void> signupUser(
+    String email, 
+    String password, 
+    String name, 
+    BuildContext context
+  ) async {
     try {
       UserCredential userCredential = await _auth.createUserWithEmailAndPassword(email: email, password: password);
       User? user = userCredential.user;
@@ -70,7 +77,6 @@ class AuthService {
           'patientId': user.uid,
         });
 
-        // Store in global state
         Provider.of<PateintProvider>(context, listen: false).setUserDetails(
           userId: user.uid,
           deviceToken: deviceToken,
@@ -80,58 +86,52 @@ class AuthService {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Registration Successful')));
       }
     } on FirebaseAuthException catch (e) {
-      if (e.code == 'email-already-in-use') {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Email Provided already Exists')));
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('An error occurred. Please try again.')));
-      }
+      String errorMessage = e.code == 'email-already-in-use'
+          ? 'The email provided is already in use.'
+          : 'An error occurred. Please try again.';
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMessage)));
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('An error occurred: ${e.toString()}')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('An error occurred: ${e.toString()}')),
+        );
       }
     }
   }
-static Future<void> signinUser(String email, String password, BuildContext context) async {
-  try {
-    UserCredential userCredential = await _auth.signInWithEmailAndPassword(email: email, password: password);
-    User? user = userCredential.user;
 
-    if (user != null) {
-      DocumentSnapshot patientDoc = await _firestore.collection('patients').doc(user.uid).get();
+  static Future<void> signinUser(
+    String email, 
+    String password, 
+    BuildContext context
+  ) async {
+    try {
+      UserCredential userCredential = await _auth.signInWithEmailAndPassword(email: email, password: password);
+      User? user = userCredential.user;
 
-      // Cast the document data to a Map
-      Map<String, dynamic>? data = patientDoc.data() as Map<String, dynamic>?;
+      if (user != null) {
+        DocumentSnapshot patientDoc = await _firestore.collection('patients').doc(user.uid).get();
+        Map<String, dynamic>? data = patientDoc.data() as Map<String, dynamic>?;
 
-      // Safely access fields with default values if they are missing
-      String deviceToken = data?.containsKey('deviceToken') == true
-          ? data!['deviceToken']
-          : ''; // Provide a default value if the field is missing
+        String deviceToken = data?['deviceToken'] ?? '';
+        String patientId = data?['patientId'] ?? '';
 
-      String patientId = data?.containsKey('patientId') == true
-          ? data!['patientId']
-          : ''; // Provide a default value if the field is missing
+        Provider.of<PateintProvider>(context, listen: false).setUserDetails(
+          userId: patientId,
+          deviceToken: deviceToken,
+        );
 
-      // Store in global state
-      Provider.of<PateintProvider>(context, listen: false).setUserDetails(
-        userId: patientId,
-        deviceToken: deviceToken,
-      );
-
-      Navigator.pushReplacementNamed(context, '/homepage');
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('You are Logged in')));
+        Navigator.pushReplacementNamed(context, '/homepage');
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('You are logged in')));
+      }
+    } on FirebaseAuthException catch (e) {
+      String errorMessage = e.code == 'user-not-found'
+          ? 'No user found with this email.'
+          : e.code == 'wrong-password'
+              ? 'The password did not match.'
+              : 'An error occurred.';
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMessage)));
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('An unexpected error occurred')));
     }
-  } on FirebaseAuthException catch (e) {
-    if (e.code == 'user-not-found') {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('No user found with this Email')));
-    } else if (e.code == 'wrong-password') {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Password did not match')));
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('An error occurred')));
-    }
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('An unexpected error occurred')));
   }
-}
-
-
 }
