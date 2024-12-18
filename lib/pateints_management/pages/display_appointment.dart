@@ -3,9 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:razorpay_flutter/razorpay_flutter.dart';
 
 class BookedAppointmentsPage extends StatelessWidget {
-  const BookedAppointmentsPage({Key? key}) : super(key: key);
+  BookedAppointmentsPage({Key? key}) : super(key: key);
+  Razorpay razorpay = Razorpay();
 
   void _startChat(BuildContext context, String doctorId, String appointmentId,
       String patientId) async {
@@ -43,7 +46,8 @@ class BookedAppointmentsPage extends StatelessWidget {
     }
   }
 
-  void _showReviewDialog(BuildContext context, String appointmentId, String doctorId, String patientId) async {
+  void _showReviewDialog(BuildContext context, String appointmentId,
+      String doctorId, String patientId) async {
     final _formKey = GlobalKey<FormState>();
     double? _rating;
     String _description = '';
@@ -65,7 +69,8 @@ class BookedAppointmentsPage extends StatelessWidget {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: Text(existingReview == null ? 'Leave a Review' : 'Edit Your Review'),
+          title: Text(
+              existingReview == null ? 'Leave a Review' : 'Edit Your Review'),
           content: Form(
             key: _formKey,
             child: Column(
@@ -104,7 +109,8 @@ class BookedAppointmentsPage extends StatelessWidget {
               onPressed: () {
                 if (_formKey.currentState?.validate() ?? false) {
                   if (existingReview == null) {
-                    _submitReview(appointmentId, _rating!, _description, doctorId, patientId);
+                    _submitReview(appointmentId, _rating!, _description,
+                        doctorId, patientId);
                   } else {
                     _updateReview(existingReview.id, _rating!, _description);
                   }
@@ -123,7 +129,8 @@ class BookedAppointmentsPage extends StatelessWidget {
     }
   }
 
-  void _submitReview(String appointmentId, double rating, String description, String doctorId, String patientId) {
+  void _submitReview(String appointmentId, double rating, String description,
+      String doctorId, String patientId) {
     FirebaseFirestore.instance.collection('reviews').add({
       'appointmentId': appointmentId,
       'rating': rating,
@@ -144,6 +151,9 @@ class BookedAppointmentsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+//razorpay payment method
+    razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
+    razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
     // Get the current user
     final User? user = FirebaseAuth.instance.currentUser;
 
@@ -221,16 +231,31 @@ class BookedAppointmentsPage extends StatelessWidget {
                           children: [
                             ElevatedButton(
                               onPressed: () => _startChat(
-                                  context,
-                                  doctorId,
-                                  appointment.id,
-                                  patientId),
+                                  context, doctorId, appointment.id, patientId),
                               child: const Text('Chat with Doctor'),
                             ),
                             const SizedBox(height: 8),
                             ElevatedButton(
-                              onPressed: () => _showReviewDialog(context, appointment.id, doctorId, patientId),
+                              onPressed: () => _showReviewDialog(
+                                  context, appointment.id, doctorId, patientId),
                               child: const Text('Leave or Edit Review'),
+                            ),
+                            const SizedBox(height: 8),
+                            ElevatedButton(
+                              onPressed: () {
+                                var options = {
+                                  'key': 'rzp_test_GcZZFDPP0jHtC4',
+                                  'amount': 200000,
+                                  'name': 'CodKancks',
+                                  'description': 'Booking Amount',
+                                  'prefill': {
+                                    'contact': '9104604960',
+                                    'email': 'test@razorpay.com'
+                                  }
+                                };
+                                razorpay.open(options);
+                              },
+                              child: const Text('Payment'),
                             ),
                           ],
                         ),
@@ -243,5 +268,13 @@ class BookedAppointmentsPage extends StatelessWidget {
         },
       ),
     );
+  }
+
+  void _handlePaymentSuccess(PaymentSuccessResponse response) {
+    Fluttertoast.showToast(msg: "Payment successfull");
+  }
+
+  void _handlePaymentError(PaymentFailureResponse response) {
+    Fluttertoast.showToast(msg: "Payment failed");
   }
 }
